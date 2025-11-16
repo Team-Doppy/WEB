@@ -2,29 +2,24 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ImageRowNode } from '@/app/types/post.types';
+import { useSpoiler } from '@/app/hooks/useSpoiler';
 
 interface ImageRowBlockProps {
   node: ImageRowNode;
 }
 
 export const ImageRowBlock: React.FC<ImageRowBlockProps> = ({ node }) => {
-  const [isRevealed, setIsRevealed] = useState(!node.spoiler);
-  const [isScattering, setIsScattering] = useState(false);
-  const scatterStartTime = useRef<number>(0);
+  const [errorIndices, setErrorIndices] = useState<Set<number>>(new Set());
+  const { isRevealed, isScattering, toggleSpoiler, scatterStartTimeRef } = useSpoiler({
+    hasSpoiler: !!node.spoiler,
+  });
   
   // 최대 3개까지만 표시
   const urls = node.urls.slice(0, 3);
   const spacing = node.spacing || 2;
 
-  const toggleSpoiler = () => {
-    if (node.spoiler && !isRevealed) {
-      setIsScattering(true);
-      scatterStartTime.current = Date.now();
-      setTimeout(() => {
-        setIsRevealed(true);
-        setIsScattering(false);
-      }, 520);
-    }
+  const handleImageError = (index: number) => {
+    setErrorIndices(prev => new Set(prev).add(index));
   };
   
   return (
@@ -35,23 +30,59 @@ export const ImageRowBlock: React.FC<ImageRowBlockProps> = ({ node }) => {
         gap: `${spacing}px`
       }}
     >
-      {urls.map((url, index) => (
-        <div key={index} className="relative overflow-hidden">
-          <img
-            src={url}
-            alt=""
-            className="w-full h-full object-cover"
-            loading="lazy"
-            style={{ display: 'block' }}
-          />
-        </div>
-      ))}
+      {/* Placeholder - 크기 확보 */}
+      <div 
+        className="absolute inset-0 grid bg-[#121212]"
+        style={{ 
+          gridTemplateColumns: `repeat(${urls.length}, 1fr)`,
+          gap: `${spacing}px`
+        }}
+      >
+        {urls.map((_, i) => (
+          <div key={i} className="w-full aspect-square bg-[#121212]"></div>
+        ))}
+      </div>
+      
+      {/* 실제 콘텐츠 - fade-in 효과 */}
+      <div className="relative transition-opacity duration-500 opacity-0 animate-fade-in">
+        {urls.map((url, index) => (
+          <div key={index} className="relative overflow-hidden">
+            {errorIndices.has(index) ? (
+              <div className="w-full aspect-square bg-gray-800 flex flex-col items-center justify-center gap-2 border border-gray-700">
+                <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            ) : (
+              <img
+                src={url}
+                alt=""
+                className="w-full h-full object-cover"
+                loading="lazy"
+                style={{ display: 'block' }}
+                onError={() => handleImageError(index)}
+                onLoad={(e) => {
+                  // 이미지 로드 완료 시 fade-in
+                  const container = e.currentTarget.closest('.relative');
+                  if (container) {
+                    const fadeContainer = container.parentElement;
+                    if (fadeContainer) {
+                      fadeContainer.classList.remove('opacity-0');
+                      fadeContainer.classList.add('opacity-100');
+                    }
+                  }
+                }}
+              />
+            )}
+          </div>
+        ))}
+      </div>
 
       {/* 스포일러 오버레이 */}
       {node.spoiler && !isRevealed && (
         <ImageSpoilerOverlay
           isScattering={isScattering}
-          scatterStartTime={scatterStartTime.current}
+          scatterStartTime={scatterStartTimeRef.current}
           onReveal={toggleSpoiler}
         />
       )}
@@ -101,7 +132,7 @@ const ImageSpoilerOverlay: React.FC<ImageSpoilerOverlayProps> = ({
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (isScattering) {
-        const elapsed = Date.now() - scatterStartTime;
+        const elapsed = Date.now() - scatterStartTimeRef.current;
         const t = Math.min(elapsed / 520, 1);
         drawScatterEffect(ctx, canvas.width, canvas.height, t);
         
@@ -125,7 +156,7 @@ const ImageSpoilerOverlay: React.FC<ImageSpoilerOverlayProps> = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isScattering, scatterStartTime]);
+  }, [isScattering]);
 
   return (
     <div

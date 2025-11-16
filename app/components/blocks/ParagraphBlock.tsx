@@ -2,7 +2,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ParagraphNode } from '@/app/types/post.types';
+import { useSpoiler } from '@/app/hooks/useSpoiler';
 import { formatNumber } from '@/app/utils/format';
+import { formatDate } from '@/app/utils/date';
 
 interface ParagraphBlockProps {
   node: ParagraphNode;
@@ -19,7 +21,7 @@ interface TextSegment {
   fontSize?: number;
   spoiler?: boolean;
   highlight?: string;
-  spanIndex?: number;
+  spanIndex?: number; 
 }
 
 export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo, viewCount }) => {
@@ -146,36 +148,41 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
 
   return (
     <div className="relative">
-      {/* 제목 블록이면 작성자 정보 먼저 표시 */}
-      {node.isTitle && authorInfo && (
-        <div className="flex items-center gap-4 mb-6">
-          <img
-            src={authorInfo.authorProfileImageUrl}
-            alt={authorInfo.author}
-            className="w-16 h-16 rounded-full ring-2 ring-white/30"
-          />
-          <div>
-            <p className="font-semibold text-xl text-white">{authorInfo.author}</p>
-            <time className="text-base text-gray-400">
-              {new Date(authorInfo.createdAt).toLocaleDateString('ko-KR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </time>
+      {/* Placeholder - 크기 확보 */}
+      <div className="absolute inset-0 bg-[#121212] -z-10">
+        {node.isTitle && <div className="h-32"></div>}
+        {!node.isTitle && node.text && <div className="min-h-8"></div>}
+        {!node.text && <div className="h-6"></div>}
+      </div>
+      
+      {/* 실제 콘텐츠 - fade-in 효과 */}
+      <div className="relative transition-opacity duration-500 opacity-0 animate-fade-in">
+        {/* 제목 블록이면 작성자 정보 먼저 표시 */}
+        {node.isTitle && authorInfo && (
+          <div className="flex items-center gap-4 mb-6">
+            <img
+              src={authorInfo.authorProfileImageUrl}
+              alt={authorInfo.author}
+              className="w-16 h-16 rounded-full ring-2 ring-white/30"
+            />
+            <div>
+              <p className="font-semibold text-xl text-white">{authorInfo.author}</p>
+              <time className="text-base text-gray-400">
+                {formatDate(authorInfo.createdAt, 'medium')}
+              </time>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className={`${node.isTitle ? 'flex items-center gap-4 mb-6' : ''}`}>
-        <p
-          ref={textRef}
-          className={`${
-            node.isTitle
-              ? 'text-6xl font-bold text-white'
-              : 'text-2xl leading-relaxed mb-8 text-white'
-          } ${alignClass} relative whitespace-pre-wrap ${node.isTitle ? 'flex-shrink-0' : ''}`}
-        >
+        <div className={`${node.isTitle ? 'flex items-center gap-4 mb-6' : ''}`}>
+          <p
+            ref={textRef}
+            className={`${
+              node.isTitle
+                ? 'text-6xl font-bold text-white'
+                : 'text-2xl leading-relaxed mb-8 text-white'
+            } ${alignClass} relative whitespace-pre-wrap ${node.isTitle ? 'flex-shrink-0' : ''}`}
+          >
         {segments.map((segment, index) => {
           const style: React.CSSProperties = {};
           if (segment.fontSize) {
@@ -229,23 +236,24 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
         })}
         </p>
 
-        {/* 제목 옆에 뷰카운트 */}
-        {node.isTitle && viewCount !== undefined && (
-          <div className="flex items-center justify-center w-14 h-14 rounded-full bg-white/10 backdrop-blur-sm flex-shrink-0">
-            <span className="text-white font-semibold text-sm">
-              {formatNumber(viewCount)}
-            </span>
-          </div>
+          {/* 제목 옆에 뷰카운트 */}
+          {node.isTitle && viewCount !== undefined && (
+            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-white/10 backdrop-blur-sm flex-shrink-0">
+              <span className="text-white font-semibold text-sm">
+                {formatNumber(viewCount)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* 스포일러 파티클 오버레이 */}
+        {hasSpoiler && !isRevealed && spoilerRects.length > 0 && (
+          <SpoilerOverlay
+            rects={spoilerRects}
+            onReveal={toggleSpoiler}
+          />
         )}
       </div>
-
-      {/* 스포일러 파티클 오버레이 */}
-      {hasSpoiler && !isRevealed && spoilerRects.length > 0 && (
-        <SpoilerOverlay
-          rects={spoilerRects}
-          onReveal={toggleSpoiler}
-        />
-      )}
     </div>
   );
 };
@@ -259,8 +267,9 @@ const SpoilerOverlay: React.FC<SpoilerOverlayProps> = ({ rects, onReveal }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | undefined>(undefined);
-  const [isScattering, setIsScattering] = useState(false);
-  const scatterStartTime = useRef<number>(0);
+  const { isScattering, scatterStartTimeRef, toggleSpoiler } = useSpoiler({
+    hasSpoiler: true,
+  });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -291,13 +300,12 @@ const SpoilerOverlay: React.FC<SpoilerOverlayProps> = ({ rects, onReveal }) => {
 
       if (isScattering) {
         // 흩어지는 애니메이션
-        const elapsed = Date.now() - scatterStartTime.current;
+        const elapsed = Date.now() - scatterStartTimeRef.current;
         const t = Math.min(elapsed / 520, 1); // 520ms 동안
         
         drawScatterEffect(ctx, rects, t);
         
         if (t >= 1) {
-          setIsScattering(false);
           return;
         }
       } else {
@@ -320,8 +328,7 @@ const SpoilerOverlay: React.FC<SpoilerOverlayProps> = ({ rects, onReveal }) => {
   }, [rects, isScattering]);
 
   const handleClick = () => {
-    setIsScattering(true);
-    scatterStartTime.current = Date.now();
+    toggleSpoiler();
     setTimeout(onReveal, 520);
   };
 

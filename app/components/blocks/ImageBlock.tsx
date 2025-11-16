@@ -1,54 +1,78 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { ImageNode } from '@/app/types/post.types';
+import { useImageError } from '@/app/hooks/useImageError';
+import { useSpoiler } from '@/app/hooks/useSpoiler';
 
 interface ImageBlockProps {
   node: ImageNode;
 }
 
 export const ImageBlock: React.FC<ImageBlockProps> = ({ node }) => {
-  const [isRevealed, setIsRevealed] = useState(!node.data.spoiler);
-  const [isScattering, setIsScattering] = useState(false);
-  const scatterStartTime = useRef<number>(0);
+  const { hasError, handleError } = useImageError();
+  const { isRevealed, isScattering, toggleSpoiler, scatterStartTimeRef } = useSpoiler({
+    hasSpoiler: !!node.data.spoiler,
+  });
 
-  const toggleSpoiler = () => {
-    if (node.data.spoiler && !isRevealed) {
-      setIsScattering(true);
-      scatterStartTime.current = Date.now();
-      setTimeout(() => {
-        setIsRevealed(true);
-        setIsScattering(false);
-      }, 520);
-    }
-  };
+  if (hasError) {
+    return (
+      <div className="my-4 relative">
+        <div className="w-full aspect-video bg-[#121212] rounded-lg absolute inset-0"></div>
+        <div className="w-full aspect-video bg-gray-800 rounded-lg flex flex-col items-center justify-center gap-3 border border-gray-700 relative transition-opacity duration-500 opacity-0 animate-fade-in">
+          <svg className="w-12 h-12 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <p className="text-gray-500 text-sm">이미지를 불러올 수 없습니다</p>
+        </div>
+        {node.data.hasComments && node.data.commentCount > 0 && (
+          <div className="absolute top-2 right-2 bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10">
+            <span>💬</span>
+            <span>{node.data.commentCount}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="my-4 relative">
-      <img
-        src={node.data.url}
-        alt=""
-        className="w-full"
-        loading="lazy"
-        style={{ display: 'block' }}
-      />
+      {/* Placeholder - 크기 확보 */}
+      <div className="w-full aspect-video bg-[#121212] rounded-lg absolute inset-0"></div>
       
-      {/* 스포일러 오버레이 */}
-      {node.data.spoiler && !isRevealed && (
-        <ImageSpoilerOverlay
-          isScattering={isScattering}
-          scatterStartTime={scatterStartTime.current}
-          onReveal={toggleSpoiler}
+      {/* 실제 콘텐츠 - fade-in 효과 */}
+      <div className="relative transition-opacity duration-500 opacity-0 animate-fade-in">
+        <img
+          src={node.data.url}
+          alt=""
+          className="w-full rounded-lg"
+          loading="lazy"
+          style={{ display: 'block' }}
+          onError={handleError}
+          onLoad={(e) => {
+            // 이미지 로드 완료 시 fade-in
+            e.currentTarget.parentElement?.classList.remove('opacity-0');
+            e.currentTarget.parentElement?.classList.add('opacity-100');
+          }}
         />
-      )}
+      
+        {/* 스포일러 오버레이 */}
+        {node.data.spoiler && !isRevealed && (
+          <ImageSpoilerOverlay
+            isScattering={isScattering}
+            scatterStartTime={scatterStartTimeRef.current}
+            onReveal={toggleSpoiler}
+          />
+        )}
 
-      {/* 댓글 배지 */}
-      {node.data.hasComments && node.data.commentCount > 0 && (
-        <div className="absolute top-2 right-2 bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-          <span>💬</span>
-          <span>{node.data.commentCount}</span>
-        </div>
-      )}
+        {/* 댓글 배지 */}
+        {node.data.hasComments && node.data.commentCount > 0 && (
+          <div className="absolute top-2 right-2 bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10">
+            <span>💬</span>
+            <span>{node.data.commentCount}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

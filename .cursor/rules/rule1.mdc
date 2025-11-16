@@ -1,0 +1,46 @@
+---
+alwaysApply: true
+---
+# Project Rules (Auto-generated)
+
+## Tech Stack
+- Next.js 16.0.1 (App Router)
+- React 19.2.0
+- TypeScript 5
+- Tailwind CSS 4
+- ESLint
+
+## File Structure
+- App Router: `app/` directory with dynamic routes `[username]/[postId]`
+- Components: `app/components/` with subfolder `blocks/`
+- Types: `app/types/` (e.g., `post.types.ts`)
+- Utils: `app/utils/` (e.g., `format.ts`, `particleAnimation.ts`)
+- Lib: `app/lib/` (e.g., `api.ts`, `mockData.ts`, `slug.ts`)
+- Path alias: `@/` maps to root directory
+
+## Naming Conventions
+- Components: PascalCase files and exports (PostViewer.tsx, BlockRenderer.tsx)
+- Types: PascalCase interfaces/types in `app/types/` (Post, ParagraphNode)
+- Utils: camelCase functions (formatNumber, createSlug)
+- Props interfaces: `ComponentNameProps` pattern
+- Page components: default export, other components: named export
+
+## Patterns Found
+1. **Client Components**: All interactive components use `'use client'` directive at top
+2. **Component Type**: Use `React.FC<Props>` type annotation (e.g., `export const PostViewer: React.FC<PostViewerProps>`)
+3. **Props Interface**: Define props as `interface ComponentNameProps` before component
+4. **Import Paths**: Use `@/` alias for imports (e.g., `@/app/types/post.types`)
+5. **Styling**: Tailwind CSS classes only, no CSS modules or styled-components
+6. **State Management**: React hooks (useState, useRef, useEffect) directly, no external state library
+7. **Data Fetching**: Direct async/await fetch in server components, no custom hooks pattern
+8. **Type Exports**: All types/interfaces exported from `app/types/` directory
+9. **Block Pattern**: Block components in `app/components/blocks/` follow same structure
+10. **Server/Client Split**: Page components are server components, UI components are client components
+
+## AI Response Rules
+- Show file paths when referencing code
+- Max 3 lines explanation per rule
+- No verbose preambles
+- Use existing patterns, don't introduce new conventions
+- Match component structure: `'use client'`, imports, interface, `React.FC` export
+
