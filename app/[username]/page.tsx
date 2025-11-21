@@ -1,6 +1,5 @@
-import { fetchUserPosts } from '@/app/lib/dataFetcher';
+import { fetchUserPosts, fetchProfile } from '@/app/lib/dataFetcher';
 import { validateUsernameParam } from '@/app/lib/pageHelpers';
-import { UserHeader } from '@/app/components/Header';
 import { ProfileImage } from '@/app/components/ProfileImage';
 import { PostsSection } from '@/app/components/PostsSection';
 
@@ -14,30 +13,44 @@ export default async function UserPage({ params }: PageProps) {
   const { username } = await params;
 
   const validUsername = validateUsernameParam(username);
-  const posts = await fetchUserPosts(validUsername);
+  const [posts, profile] = await Promise.all([
+    fetchUserPosts(validUsername),
+    fetchProfile(validUsername),
+  ]);
 
-  // 첫 번째 게시글에서 사용자 정보 가져오기
-  const userInfo = posts.length > 0 ? {
+  // 프로필 정보 또는 첫 번째 게시글에서 사용자 정보 가져오기
+  const userInfo = profile ? {
+    profileImageUrl: profile.profileImageUrl || null,
+    username: profile.username,
+    alias: profile.alias,
+  } : (posts.length > 0 ? {
     profileImageUrl: posts[0].authorProfileImageUrl,
     username: posts[0].author,
-  } : null;
+    alias: posts[0].author,
+  } : null);
 
   return (
     <div className="min-h-screen bg-[#121212]">
-      <UserHeader username={validUsername} />
-      <main className="pt-14 pb-16 px-4">
-        <div className="max-w-4xl mx-auto">
+      <main className="pt-8 pb-16 px-4">
+        <div className="max-w-7xl mx-auto">
           {/* Profile Section - 위아래 여백 추가 */}
-          <div className="flex flex-col items-center my-12">
+          <div className="flex flex-col items-center my-16">
             {userInfo && (
               <>
-                <ProfileImage
-                  src={userInfo.profileImageUrl}
-                  alt={username}
-                  size="lg"
-                  className="mb-6 ring-4 ring-gray-800"
-                />
-                <h1 className="text-white text-2xl font-bold">{username}</h1>
+                {userInfo.profileImageUrl && (
+                  <ProfileImage
+                    src={userInfo.profileImageUrl}
+                    alt={username}
+                    size="xl"
+                    className="mb-8 ring-2 ring-white/30"
+                  />
+                )}
+                <h1 className="text-white text-4xl font-bold mb-3">{userInfo.alias || username}</h1>
+                {profile?.selfIntroduction && (
+                  <p className="text-gray-400 text-lg mb-6 text-center max-w-2xl">
+                    {profile.selfIntroduction}
+                  </p>
+                )}
               </>
             )}
           </div>

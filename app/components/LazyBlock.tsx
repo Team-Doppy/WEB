@@ -24,28 +24,16 @@ export const LazyBlock: React.FC<LazyBlockProps> = ({
   onRendered,
   canRender = true
 }) => {
-  const [isVisible, setIsVisible] = useState(index < initialRenderCount);
   const [hasRendered, setHasRendered] = useState(index < initialRenderCount);
-  const [shouldFade, setShouldFade] = useState(false);
   const blockRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // 초기 렌더링인 경우 순차적으로 나타나도록
+  // 초기 블록은 즉시 렌더링
   useEffect(() => {
     if (index < initialRenderCount) {
-      // 각 블록마다 150ms씩 딜레이를 두어 순차적으로 나타나게
-      const delay = index * 150;
-      timeoutRef.current = setTimeout(() => {
-        setShouldFade(true);
-        renderStateMap.set(index, true);
-        onRendered?.(index);
-      }, delay);
-      
-      return () => {
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-      };
+      setHasRendered(true);
+      renderStateMap.set(index, true);
+      onRendered?.(index);
     }
   }, [index, initialRenderCount, onRendered]);
 
@@ -60,61 +48,47 @@ export const LazyBlock: React.FC<LazyBlockProps> = ({
       return;
     }
 
-    // 이전 블록이 완료되었으면 IntersectionObserver 시작
-    const observer = new IntersectionObserver(
+    // IntersectionObserver로 스크롤 기반 렌더링
+    observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            setIsVisible(true);
-            // 자연스러운 딜레이 (300-400ms)
-            const delay = 300 + Math.random() * 100;
-            timeoutRef.current = setTimeout(() => {
-              setHasRendered(true);
-              // fade-in 애니메이션을 위한 약간의 추가 딜레이
-              setTimeout(() => {
-                setShouldFade(true);
-                renderStateMap.set(index, true);
-                onRendered?.(index);
-              }, 100);
-            }, delay);
-            observer.disconnect();
+            setHasRendered(true);
+            renderStateMap.set(index, true);
+            onRendered?.(index);
+            observerRef.current?.disconnect();
           }
         });
       },
       {
-        rootMargin: '150px', // 뷰포트 150px 전에 미리 로드
-        threshold: 0.1,
+        rootMargin: '200px', // 뷰포트 200px 전에 미리 로드
+        threshold: 0.01,
       }
     );
 
     if (blockRef.current) {
-      observer.observe(blockRef.current);
+      observerRef.current.observe(blockRef.current);
     }
 
     return () => {
-      observer.disconnect();
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      observerRef.current?.disconnect();
     };
   }, [index, hasRendered, canRender, onRendered, initialRenderCount]);
 
   return (
     <div ref={blockRef} className="relative">
-      {/* 실제 콘텐츠 - fade-in 효과 */}
-      {isVisible && hasRendered && (
-        <div
-          className={`transition-opacity duration-500 ${
-            shouldFade ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
+      {/* 실제 콘텐츠 */}
+      {hasRendered && (
+        <div className="relative z-10">
           {children}
         </div>
       )}
-      {/* Placeholder - 항상 렌더링하여 크기 확보 */}
-      <div className={isVisible && hasRendered && shouldFade ? 'hidden' : ''}>
-        <SkeletonBlock node={node} />
-      </div>
+      {/* Placeholder - 렌더링 전에만 표시 */}
+      {!hasRendered && (
+        <div className="relative z-0">
+          <SkeletonBlock node={node} />
+        </div>
+      )}
     </div>
   );
 };

@@ -4,10 +4,8 @@ import { extractPostId } from '@/app/lib/slug';
 import { fetchPostData } from '@/app/lib/dataFetcher';
 import { validateAndFetchPost } from '@/app/lib/pageHelpers';
 import { formatDate } from '@/app/utils/date';
-import { PostHeader } from '@/app/components/Header';
 import { ReadOnlyEditor } from '@/app/components/ReadOnlyEditor';
 import { ProfileImage } from '@/app/components/ProfileImage';
-import { ThumbnailImage } from '@/app/components/ThumbnailImage';
 
 interface PageProps {
   params: Promise<{
@@ -23,17 +21,8 @@ export default async function PostPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-[#121212]">
-      <PostHeader />
-      <main className="pt-14 pb-16 px-4">
+      <main className="pt-8 pb-16 px-4">
         <div className="max-w-4xl mx-auto">
-          {/* Thumbnail Card */}
-          <div className="mb-10 rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
-            <ThumbnailImage
-              src={post.thumbnailImageUrl}
-              alt={post.title}
-            />
-          </div>
-
           {/* User Info Section */}
           <Link href={`/${post.author}`} className="block mb-10">
             <div className="flex items-center gap-4 p-4 rounded-lg hover:bg-gray-800/50 transition-colors cursor-pointer">

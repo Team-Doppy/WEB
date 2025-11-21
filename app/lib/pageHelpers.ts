@@ -33,8 +33,8 @@ export async function validateAndFetchPost(
     notFound();
   }
 
-  // 데이터 가져오기
-  const post = await fetchPostData(validUsername, postId);
+  // 데이터 가져오기 (postId만 사용)
+  const post = await fetchPostData(postId);
 
   if (!post) {
     notFound();

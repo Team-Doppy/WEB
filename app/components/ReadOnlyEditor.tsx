@@ -55,7 +55,7 @@ export const ReadOnlyEditor: React.FC<ReadOnlyEditorProps> = ({ post }) => {
       </header>
 
       {/* 콘텐츠 */}
-      <div ref={contentRef} className="relative">
+      <div ref={contentRef} className="relative animate-fade-in">
         {post.content.nodes.map((node, index) => (
           <LazyBlock
             key={node.id}

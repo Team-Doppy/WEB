@@ -21,28 +21,28 @@ export function createSlug(title: string): string {
 
 /**
  * slug와 ID를 조합하여 URL 세그먼트 생성
- * 예: "애한제야", 170 → "애한제야-170"
+ * 예: "이것이 제목입니다", 189 → "189-이것이-제목입니다"
  */
 export function createPostSlug(title: string, postId: number): string {
   const slug = createSlug(title);
-  return `${slug}-${postId}`;
+  return `${postId}-${slug}`;
 }
 
 /**
  * URL 세그먼트에서 postId 추출
- * 예: "애한제야-170" → 170
- * 예: "hello-world-123" → 123
+ * 예: "189-이것이-제목입니다" → "189"
+ * 예: "123-hello-world" → "123"
  */
 export function extractPostId(slugWithId: string): string | null {
-  const match = slugWithId.match(/-(\d+)$/);
+  const match = slugWithId.match(/^(\d+)-/);
   return match ? match[1] : null;
 }
 
 /**
  * URL 세그먼트 검증
- * slug-{숫자} 형식인지 확인
+ * {숫자}-slug 형식인지 확인
  */
 export function isValidPostSlug(slugWithId: string): boolean {
-  return /-\d+$/.test(slugWithId);
+  return /^\d+-/.test(slugWithId);
 }
 

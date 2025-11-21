@@ -6,7 +6,7 @@ import { useImageError } from '@/app/hooks/useImageError';
 interface ProfileImageProps {
   src: string;
   alt: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 }
 
@@ -21,7 +21,8 @@ export const ProfileImage: React.FC<ProfileImageProps> = ({
   const sizeClasses = {
     sm: 'w-12 h-12',
     md: 'w-16 h-16',
-    lg: 'w-32 h-32',
+    lg: 'w-40 h-40',
+    xl: 'w-48 h-48',
   };
 
   if (hasError) {

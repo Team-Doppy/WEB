@@ -13,9 +13,11 @@ export const PostViewer: React.FC<PostViewerProps> = ({ post }) => {
 
   if (showContent) {
     return (
-      <main className="min-h-screen bg-[#121212] py-12 px-4">
-        <div className="container mx-auto">
-          <ReadOnlyEditor post={post} />
+      <main className="min-h-screen bg-black">
+        <div className="ml-20">
+          <div className="max-w-4xl mx-auto py-12 px-4">
+            <ReadOnlyEditor post={post} />
+          </div>
         </div>
       </main>
     );
