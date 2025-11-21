@@ -32,11 +32,21 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       
       - name: Build Project Artifacts
-        run: vercel build --prod --no-turbo --token=${{ secrets.VERCEL_TOKEN }}
+        run: npm run build
+        env:
+          NEXT_BUILD_NO_TURBO: "1"
+      
+      - name: Prepare Vercel Build Output
+        run: |
+          mkdir -p .vercel
+          echo '{"version":2}' > .vercel/project.json
+      
+      - name: Build with Vercel
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          TURBOPACK: "0"
+          NEXT_BUILD_NO_TURBO: "1"
       
       - name: Deploy Project Artifacts to Vercel
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
