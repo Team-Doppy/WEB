@@ -95,10 +95,10 @@ export interface TextSpan {
   };
 }
 
-// 스티커 (드로잉)
+// 스티커 (드로잉 또는 이미지)
 export interface Sticker {
   id: string;
-  type: 'drawing';
+  type: 'drawing' | 'image';
   scale: number;
   anchor: {
     refW: number;
@@ -108,7 +108,8 @@ export interface Sticker {
   };
   zIndex: number;
   content: {
-    strokes: Stroke[];
+    strokes?: Stroke[]; // 벡터 드로잉용 (옵션)
+    imageUrl?: string; // PNG 이미지용 (옵션)
   };
   opacity: number;
   rotation: number;

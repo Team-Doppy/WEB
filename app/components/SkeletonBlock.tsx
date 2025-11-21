@@ -11,37 +11,43 @@ export const SkeletonBlock: React.FC<SkeletonBlockProps> = ({ node }) => {
   switch (node.type) {
     case 'paragraph':
       const paragraphNode = node as any;
-      // 실제 텍스트 높이를 추정하여 크기 확보
-      const estimatedHeight = paragraphNode.isTitle 
-        ? 'h-20' // 제목은 더 큰 높이
-        : paragraphNode.text 
-          ? `min-h-[${Math.max(24, paragraphNode.text.length * 0.5)}px]` 
-          : 'h-6'; // 빈 줄
+      const isTitle = paragraphNode.isTitle;
+      const text = paragraphNode.text;
       
       return (
-        <div className="my-4">
-          <div className={`bg-[#121212] ${paragraphNode.isTitle ? 'h-20' : 'min-h-6'}`}>
-            {paragraphNode.isTitle && (
-              <div className="h-6 bg-gray-800/30 rounded w-1/2"></div>
-            )}
-            {paragraphNode.text && !paragraphNode.isTitle && (
-              <div className="h-4 bg-gray-800/30 rounded w-3/4"></div>
-            )}
-          </div>
+        <div className="my-6">
+          {isTitle ? (
+            <div className="h-10 bg-[#1a1a1a] rounded-md animate-shimmer w-3/4"></div>
+          ) : text ? (
+            <div className="space-y-4">
+              <div className="h-6 bg-[#1a1a1a] rounded animate-shimmer w-full"></div>
+              <div className="h-6 bg-[#1a1a1a] rounded animate-shimmer w-full"></div>
+              <div className="h-6 bg-[#1a1a1a] rounded animate-shimmer w-4/5"></div>
+            </div>
+          ) : (
+            <div className="h-6"></div>
+          )}
         </div>
       );
     
     case 'image':
       return (
-        <div className="my-4">
-          <div className="w-full aspect-video bg-[#121212] rounded-lg"></div>
+        <div className="my-6">
+          <div className="w-full h-[500px] bg-[#1a1a1a] rounded-lg animate-shimmer overflow-hidden">
+            <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] via-[#2a2a2a] to-[#1a1a1a]"></div>
+          </div>
         </div>
       );
     
     case 'video':
       return (
-        <div className="my-4">
-          <div className="w-full aspect-video bg-[#121212] rounded-lg"></div>
+        <div className="my-6">
+          <div className="w-full aspect-video bg-[#1a1a1a] rounded-lg animate-shimmer overflow-hidden relative">
+            <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] via-[#2a2a2a] to-[#1a1a1a]"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-black/30 border-2 border-white/20"></div>
+            </div>
+          </div>
         </div>
       );
     
@@ -51,16 +57,21 @@ export const SkeletonBlock: React.FC<SkeletonBlockProps> = ({ node }) => {
       const count = Math.min(urls.length, 3);
       const spacing = imageRowNode.spacing || 2;
       return (
-        <div className="my-4">
+        <div className="my-6">
           <div 
-            className="grid bg-[#121212]"
+            className="grid"
             style={{ 
               gridTemplateColumns: `repeat(${count || 3}, 1fr)`,
               gap: `${spacing}px`
             }}
           >
             {Array.from({ length: count || 3 }).map((_, i) => (
-              <div key={i} className="w-full aspect-square bg-[#121212]"></div>
+              <div 
+                key={i} 
+                className="w-full aspect-square bg-[#1a1a1a] rounded animate-shimmer overflow-hidden"
+              >
+                <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] via-[#2a2a2a] to-[#1a1a1a]"></div>
+              </div>
             ))}
           </div>
         </div>
@@ -68,15 +79,15 @@ export const SkeletonBlock: React.FC<SkeletonBlockProps> = ({ node }) => {
     
     case 'mention':
       return (
-        <div className="my-4">
-          <div className="h-6 bg-[#121212] w-32"></div>
+        <div className="my-6">
+          <div className="inline-block h-7 bg-[#1a1a1a] rounded-md animate-shimmer w-32"></div>
         </div>
       );
     
     default:
       return (
-        <div className="my-4">
-          <div className="h-4 bg-[#121212] w-full"></div>
+        <div className="my-6">
+          <div className="h-6 bg-[#1a1a1a] rounded animate-shimmer w-full"></div>
         </div>
       );
   }

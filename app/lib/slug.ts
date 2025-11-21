@@ -20,29 +20,29 @@ export function createSlug(title: string): string {
 }
 
 /**
- * slug와 ID를 조합하여 URL 세그먼트 생성
- * 예: "이것이 제목입니다", 189 → "189-이것이-제목입니다"
+ * slug와 ID를 조합하여 URL 세그먼트 생성 (제목 slug만 반환)
+ * 예: "이것이 제목입니다" → "이것이-제목입니다"
  */
 export function createPostSlug(title: string, postId: number): string {
-  const slug = createSlug(title);
-  return `${postId}-${slug}`;
+  return createSlug(title);
 }
 
 /**
- * URL 세그먼트에서 postId 추출
- * 예: "189-이것이-제목입니다" → "189"
- * 예: "123-hello-world" → "123"
+ * URL 세그먼트에서 postId 추출 (이제 id는 별도 파라미터)
+ * @deprecated 이제 id는 URL 파라미터로 직접 전달됨
  */
 export function extractPostId(slugWithId: string): string | null {
+  // 이전 호환성을 위해 유지하지만, 실제로는 사용되지 않음
   const match = slugWithId.match(/^(\d+)-/);
   return match ? match[1] : null;
 }
 
 /**
  * URL 세그먼트 검증
- * {숫자}-slug 형식인지 확인
+ * slug 형식인지 확인
  */
-export function isValidPostSlug(slugWithId: string): boolean {
-  return /^\d+-/.test(slugWithId);
+export function isValidPostSlug(slug: string): boolean {
+  // slug는 제목에서 생성된 문자열이므로, 빈 문자열이 아니면 유효
+  return slug.length > 0;
 }
 

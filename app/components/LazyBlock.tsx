@@ -77,17 +77,14 @@ export const LazyBlock: React.FC<LazyBlockProps> = ({
 
   return (
     <div ref={blockRef} className="relative">
-      {/* 실제 콘텐츠 */}
-      {hasRendered && (
+      {/* 실제 콘텐츠 - 스크롤에 따라 자연스럽게 렌더링 */}
+      {hasRendered ? (
         <div className="relative z-10">
           {children}
         </div>
-      )}
-      {/* Placeholder - 렌더링 전에만 표시 */}
-      {!hasRendered && (
-        <div className="relative z-0">
-          <SkeletonBlock node={node} />
-        </div>
+      ) : (
+        // Shimmer 없이 빈 공간만 유지 (최소 높이)
+        <div className="relative z-0 min-h-[100px]" />
       )}
     </div>
   );

@@ -1,11 +1,12 @@
 export const GooglePlayBadge = () => {
   return (
     <svg 
-      width="180" 
-      height="54" 
+      width="auto" 
+      height="90" 
       viewBox="0 -47.5 135 135" 
       xmlns="http://www.w3.org/2000/svg"
-      className="hover:scale-105 transition-transform duration-200 cursor-pointer"
+      className="h-[240px] w-auto hover:scale-105 transition-transform duration-200 cursor-pointer"
+      preserveAspectRatio="xMidYMid meet"
     >
       <style>{`.st0{fill:#a6a6a6}.st1{stroke:#ffffff;stroke-width:.2;stroke-miterlimit:10}.st1,.st2{fill:#fff}.st3{fill:url(#SVGID_1_)}.st4{fill:url(#SVGID_2_)}.st5{fill:url(#SVGID_3_)}.st6{fill:url(#SVGID_4_)}.st7,.st8,.st9{opacity:.2;enable-background:new}.st8,.st9{opacity:.12}.st9{opacity:.25;fill:#fff}`}</style>
       <path d="M130 40H5c-2.8 0-5-2.2-5-5V5c0-2.8 2.2-5 5-5h125c2.8 0 5 2.2 5 5v30c0 2.8-2.2 5-5 5z"/>

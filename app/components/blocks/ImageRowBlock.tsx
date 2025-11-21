@@ -10,16 +10,63 @@ interface ImageRowBlockProps {
 
 export const ImageRowBlock: React.FC<ImageRowBlockProps> = ({ node }) => {
   const [errorIndices, setErrorIndices] = useState<Set<number>>(new Set());
+  const [imageHeights, setImageHeights] = useState<number[]>([]);
+  const [averageHeight, setAverageHeight] = useState<number | null>(null);
+  const imageRefs = useRef<(HTMLImageElement | null)[]>([]);
   const { isRevealed, isScattering, toggleSpoiler, scatterStartTimeRef } = useSpoiler({
     hasSpoiler: !!node.spoiler,
   });
   
   // 최대 3개까지만 표시
   const urls = node.urls.slice(0, 3);
-  const spacing = node.spacing || 2;
+  const spacing = Math.max(0.5, (node.spacing || 2) * 0.5); // 간격을 절반으로 줄임
 
   const handleImageError = (index: number) => {
     setErrorIndices(prev => new Set(prev).add(index));
+  };
+
+  const handleImageLoad = (index: number, e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    const imageContainer = img.parentElement?.parentElement;
+    if (!imageContainer) return;
+
+    // 이미지의 자연 비율 사용
+    const naturalWidth = img.naturalWidth;
+    const naturalHeight = img.naturalHeight;
+    
+    if (naturalWidth === 0 || naturalHeight === 0) return;
+    
+    // 컨테이너 너비에 맞춘 높이 계산
+    const containerWidth = imageContainer.offsetWidth || imageContainer.clientWidth;
+    if (containerWidth === 0) {
+      // 컨테이너 너비를 아직 알 수 없으면 다음 프레임에 다시 시도
+      setTimeout(() => handleImageLoad(index, e), 0);
+      return;
+    }
+    
+    const aspectRatio = naturalWidth / naturalHeight;
+    const calculatedHeight = containerWidth / aspectRatio;
+    
+    setImageHeights(prev => {
+      const newHeights = [...prev];
+      newHeights[index] = calculatedHeight;
+      
+      // 모든 이미지가 로드되었는지 확인
+      if (newHeights.length === urls.length && newHeights.every(h => h > 0 && !isNaN(h))) {
+        // 평균 높이 계산
+        const avg = newHeights.reduce((sum, h) => sum + h, 0) / newHeights.length;
+        setAverageHeight(avg);
+      }
+      
+      return newHeights;
+    });
+
+    // fade-in 효과
+    const fadeContainer = img.parentElement;
+    if (fadeContainer) {
+      fadeContainer.classList.remove('opacity-0');
+      fadeContainer.classList.add('opacity-100');
+    }
   };
   
   return (
@@ -27,46 +74,41 @@ export const ImageRowBlock: React.FC<ImageRowBlockProps> = ({ node }) => {
       className="my-4 grid relative"
       style={{ 
         gridTemplateColumns: `repeat(${urls.length}, 1fr)`,
-        gap: `${spacing}px`
+        gap: `${spacing}px`,
+        ...(averageHeight ? { height: `${averageHeight}px` } : {})
       }}
     >
       {urls.map((url, index) => (
-        <div key={index} className="relative overflow-hidden aspect-square">
-          {/* Placeholder - 크기 확보 */}
-          <div className="absolute inset-0 bg-[#121212]"></div>
-          
-          {/* 실제 콘텐츠 - fade-in 효과 */}
-          <div className="relative w-full h-full transition-opacity duration-500 opacity-0 animate-fade-in">
-            {errorIndices.has(index) ? (
-              <div className="w-full h-full bg-gray-800 flex flex-col items-center justify-center gap-2 border border-gray-700">
-                <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-            ) : (
+        <div 
+          key={index} 
+          className="relative overflow-hidden bg-[#121212]"
+          style={averageHeight ? { height: `${averageHeight}px` } : {}}
+        >
+          {errorIndices.has(index) ? (
+            <div className="absolute inset-0 w-full h-full bg-gray-800 flex flex-col items-center justify-center gap-2 border border-gray-700">
+              <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+          ) : (
+            <div className="absolute inset-0 transition-opacity duration-500 opacity-0 animate-fade-in">
               <img
+                ref={(el) => { imageRefs.current[index] = el; }}
                 src={url}
                 alt=""
                 className="w-full h-full object-cover"
                 loading="lazy"
                 style={{ display: 'block' }}
                 onError={() => handleImageError(index)}
-                onLoad={(e) => {
-                  // 이미지 로드 완료 시 fade-in
-                  const fadeContainer = e.currentTarget.parentElement;
-                  if (fadeContainer) {
-                    fadeContainer.classList.remove('opacity-0');
-                    fadeContainer.classList.add('opacity-100');
-                  }
-                }}
+                onLoad={(e) => handleImageLoad(index, e)}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       ))}
 
       {/* 스포일러 오버레이 */}
-      {node.spoiler && !isRevealed && (
+      {node.spoiler && (!isRevealed || isScattering) && (
         <ImageSpoilerOverlay
           isScattering={isScattering}
           scatterStartTime={scatterStartTimeRef.current}
@@ -143,7 +185,7 @@ const ImageSpoilerOverlay: React.FC<ImageSpoilerOverlayProps> = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isScattering]);
+  }, [isScattering, scatterStartTime]);
 
   return (
     <div
@@ -223,7 +265,7 @@ function drawParticles(
 
     const opacityFreq = 0.9 + rand() * 3.8;
     const opacityWave = Math.sin(t * opacityFreq + phase3);
-    const opacity = (0.5 + rand() * 0.4 + Math.abs(opacityWave) * 0.3) * 0.9;
+    const opacity = Math.min(1.0, 0.7 + rand() * 0.3 + Math.abs(opacityWave) * 0.3);
 
     ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
     ctx.fillRect(x - size / 2, y - size / 2, size, size);
@@ -256,16 +298,22 @@ function drawScatterEffect(
     const nx = dirX / dirLen;
     const ny = dirY / dirLen;
 
-    const speed = 50 + rand() * 100;
-    const spiralEffect = Math.sin(easedT * Math.PI * 4 + rand() * Math.PI * 2) * 20;
+    // 사방으로 터지는 듯한 강한 효과
+    const speed = 80 + rand() * 120; // 더 빠르게
+    const spiralEffect = Math.sin(easedT * Math.PI * 6 + rand() * Math.PI * 2) * 30; // 더 강한 나선 효과
     const move = easedT * speed;
+    
+    // 사방으로 터지는 효과를 위한 추가 방향성
+    const angle = Math.atan2(ny, nx) + (rand() - 0.5) * 0.5;
+    const spreadX = Math.cos(angle) * move;
+    const spreadY = Math.sin(angle) * move;
 
-    const x = rx + nx * move + spiralEffect * Math.cos(easedT * Math.PI * 2);
-    const y = ry + ny * move + spiralEffect * Math.sin(easedT * Math.PI * 2);
+    const x = rx + spreadX + spiralEffect * Math.cos(easedT * Math.PI * 3);
+    const y = ry + spreadY + spiralEffect * Math.sin(easedT * Math.PI * 3);
 
-    const rotation = easedT * Math.PI * 4 * (rand() > 0.5 ? 1 : -1);
-    const sz = (0.8 + rand() * 2.0) * (1.0 + 2.0 * (1.0 - easedT));
-    const opacity = fade * (0.7 + rand() * 0.3);
+    const rotation = easedT * Math.PI * 6 * (rand() > 0.5 ? 1 : -1); // 더 빠른 회전
+    const sz = (1.0 + rand() * 2.0) * (1.0 + 2.5 * (1.0 - easedT)); // 더 큰 파티클
+    const opacity = fade * (0.8 + rand() * 0.2); // 더 또렷하게
 
     ctx.save();
     ctx.translate(x, y);

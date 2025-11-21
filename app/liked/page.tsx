@@ -1,0 +1,190 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/app/contexts/AuthContext';
+import { LoginForm } from '@/app/components/LoginForm';
+import { FeedPost } from '@/app/components/FeedPost';
+import { getLikedPosts } from '@/app/lib/clientApi';
+import { Post } from '@/app/types/post.types';
+
+export default function LikedPostsPage() {
+  const { isAuthenticated } = useAuth();
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [pagination, setPagination] = useState<{
+    totalElements?: number;
+    totalPages?: number;
+    size?: number;
+    number?: number;
+    first?: boolean;
+    last?: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setIsLoginOpen(true);
+      setIsLoading(false);
+      return;
+    }
+
+    loadLikedPosts(0);
+  }, [isAuthenticated]);
+
+  const loadLikedPosts = async (page: number) => {
+    if (!isAuthenticated) return;
+
+    setIsLoading(true);
+    try {
+      const result = await getLikedPosts(page, 20);
+      if (result.pagination) {
+        setPagination(result.pagination);
+        setHasMore(!result.pagination.last);
+        
+        if (page === 0) {
+          setPosts(result.posts);
+        } else {
+          setPosts(prev => [...prev, ...result.posts]);
+        }
+      } else {
+        setPosts(result.posts);
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error('좋아요한 포스트 조회 실패:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!isLoading && hasMore && isAuthenticated) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      loadLikedPosts(nextPage);
+    }
+  };
+
+  // 무한 스크롤을 위한 Intersection Observer
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoading && hasMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, isLoading, isAuthenticated, currentPage]);
+
+  // 로그인하지 않은 경우
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-black">
+        <div className="ml-20 lg:ml-64 transition-all duration-150">
+          <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-16 pb-12 px-8">
+            <div className="text-center py-20">
+              <h1 className="text-white text-3xl font-bold mb-4">좋아요한 포스트</h1>
+              <p className="text-gray-400 mb-8">좋아요한 포스트를 보려면 로그인이 필요합니다.</p>
+            </div>
+          </div>
+        </div>
+        {isLoginOpen && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+            <div className="bg-[#1a1a1a] rounded-2xl border border-white/20 shadow-2xl px-10 md:px-12 py-16 md:py-20 max-w-2xl w-full max-h-[95vh] overflow-y-auto">
+              <LoginForm
+                onSuccess={() => {
+                  setIsLoginOpen(false);
+                }}
+                onClose={() => setIsLoginOpen(false)}
+              />
+            </div>
+          </div>
+        )}
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-black">
+      <div className="ml-20 lg:ml-64 transition-all duration-150">
+        <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-16 pb-12 px-8">
+          {/* 제목 */}
+          <div className="mb-8">
+            <h1 className="text-white text-3xl font-bold">좋아요한 포스트</h1>
+            {pagination && pagination.totalElements !== undefined && (
+              <p className="text-gray-400 text-sm mt-2">
+                총 {pagination.totalElements}개의 포스트
+              </p>
+            )}
+          </div>
+
+          {/* 포스트 목록 */}
+          {isLoading && posts.length === 0 ? (
+            <div className="space-y-8">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="space-y-4">
+                  {/* 게시글 카드 스켈레톤 */}
+                  <div className="flex gap-6">
+                    {/* 썸네일 스켈레톤 */}
+                    <div className="w-[400px] lg:w-[500px] xl:w-[600px] aspect-[4/5] bg-[#1a1a1a] rounded-lg animate-shimmer overflow-hidden flex-shrink-0">
+                      <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] via-[#2a2a2a] to-[#1a1a1a]"></div>
+                    </div>
+                    
+                    {/* 텍스트 콘텐츠 스켈레톤 */}
+                    <div className="flex-1 space-y-4 py-4">
+                      <div className="h-8 bg-[#1a1a1a] rounded animate-shimmer w-3/4"></div>
+                      <div className="space-y-2">
+                        <div className="h-5 bg-[#1a1a1a] rounded animate-shimmer w-full"></div>
+                        <div className="h-5 bg-[#1a1a1a] rounded animate-shimmer w-full"></div>
+                        <div className="h-5 bg-[#1a1a1a] rounded animate-shimmer w-4/5"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 min-h-[400px]">
+              <svg className="w-20 h-20 mb-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              <p className="text-gray-400 text-lg">좋아요한 포스트가 없습니다.</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-8">
+                {posts.map((post) => (
+                  <FeedPost key={post.id} post={post} username={post.author} />
+                ))}
+              </div>
+
+              {/* 무한 스크롤 감지 요소 */}
+              {hasMore && (
+                <div ref={observerTarget} className="h-20" />
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
+

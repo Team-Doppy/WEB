@@ -20,10 +20,10 @@ export function useSpoiler({ hasSpoiler, animationDuration = 520 }: UseSpoilerOp
 
   const toggleSpoiler = useCallback(() => {
     if (hasSpoiler && !isRevealed) {
+      setIsRevealed(true); // 즉시 텍스트 표시
       setIsScattering(true);
       scatterStartTimeRef.current = Date.now();
       setTimeout(() => {
-        setIsRevealed(true);
         setIsScattering(false);
       }, animationDuration);
     }

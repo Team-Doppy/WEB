@@ -25,7 +25,6 @@ interface TextSegment {
 }
 
 export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo, viewCount }) => {
-  const [isRevealed, setIsRevealed] = useState(false);
   const [spoilerRects, setSpoilerRects] = useState<DOMRect[]>([]);
   const textRef = useRef<HTMLParagraphElement>(null);
 
@@ -84,6 +83,7 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
 
   // 스포일러가 있는지 체크
   const hasSpoiler = segments.some(s => s.spoiler);
+  const { isRevealed, isScattering, toggleSpoiler, scatterStartTimeRef } = useSpoiler({ hasSpoiler });
 
   // 스포일러 영역의 실제 위치 계산 (줄 단위로 병합)
   useEffect(() => {
@@ -135,10 +135,6 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
     return () => clearTimeout(timer);
   }, [node.text, node.spans, hasSpoiler, isRevealed]);
 
-  const toggleSpoiler = () => {
-    setIsRevealed(true);
-  };
-
   // 정렬 처리
   const textAlign = node.metadata?.textAlign || 'left';
   const alignClass = 
@@ -180,7 +176,7 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
             className={`${
               node.isTitle
                 ? 'text-6xl font-bold text-white'
-                : 'text-2xl leading-relaxed mb-8 text-white'
+                : 'text-2xl leading-relaxed mb-2 text-white'
             } ${alignClass} relative whitespace-pre-wrap ${node.isTitle ? 'flex-shrink-0' : ''}`}
           >
         {segments.map((segment, index) => {
@@ -211,11 +207,11 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
                 data-spoiler="true"
                 onClick={toggleSpoiler}
                 className={`relative cursor-pointer select-none ${
-                  isRevealed ? '' : 'text-transparent'
+                  isRevealed || isScattering ? '' : 'text-transparent'
                 }`}
                 style={{
                   ...style,
-                  ...(segment.highlight && isRevealed ? { 
+                  ...(segment.highlight && (isRevealed || isScattering) ? { 
                     backgroundColor: saturateColor(segment.highlight, 1.5),
                     padding: '2px 4px',
                     borderRadius: '2px'
@@ -247,9 +243,11 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
         </div>
 
         {/* 스포일러 파티클 오버레이 */}
-        {hasSpoiler && !isRevealed && spoilerRects.length > 0 && (
+        {hasSpoiler && (!isRevealed || isScattering) && spoilerRects.length > 0 && (
           <SpoilerOverlay
             rects={spoilerRects}
+            isScattering={isScattering}
+            scatterStartTime={scatterStartTimeRef.current}
             onReveal={toggleSpoiler}
           />
         )}
@@ -260,16 +258,15 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
 
 interface SpoilerOverlayProps {
   rects: DOMRect[];
+  isScattering: boolean;
+  scatterStartTime: number;
   onReveal: () => void;
 }
 
-const SpoilerOverlay: React.FC<SpoilerOverlayProps> = ({ rects, onReveal }) => {
+const SpoilerOverlay: React.FC<SpoilerOverlayProps> = ({ rects, isScattering, scatterStartTime, onReveal }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | undefined>(undefined);
-  const { isScattering, scatterStartTimeRef, toggleSpoiler } = useSpoiler({
-    hasSpoiler: true,
-  });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -300,7 +297,7 @@ const SpoilerOverlay: React.FC<SpoilerOverlayProps> = ({ rects, onReveal }) => {
 
       if (isScattering) {
         // 흩어지는 애니메이션
-        const elapsed = Date.now() - scatterStartTimeRef.current;
+        const elapsed = Date.now() - scatterStartTime;
         const t = Math.min(elapsed / 520, 1); // 520ms 동안
         
         drawScatterEffect(ctx, rects, t);
@@ -325,11 +322,12 @@ const SpoilerOverlay: React.FC<SpoilerOverlayProps> = ({ rects, onReveal }) => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [rects, isScattering]);
+  }, [rects, isScattering, scatterStartTime]);
 
   const handleClick = () => {
-    toggleSpoiler();
-    setTimeout(onReveal, 520);
+    if (!isScattering) {
+      onReveal(); // 즉시 텍스트 표시 및 scatter 시작
+    }
   };
 
   return (
@@ -339,7 +337,7 @@ const SpoilerOverlay: React.FC<SpoilerOverlayProps> = ({ rects, onReveal }) => {
         <div
           key={i}
           onClick={handleClick}
-          className="absolute cursor-pointer pointer-events-auto"
+          className="absolute cursor-pointer pointer-events-auto z-10"
           style={{
             left: `${rect.left}px`,
             top: `${rect.top}px`,
@@ -425,12 +423,13 @@ function drawParticles(
       const sizeWave = Math.sin(t * sizeFreq + phase2);
       const size = 0.6 + rand() * 1.4 + Math.abs(sizeWave) * 1.3;
 
-      // 불규칙한 투명도 변화
+      // 불규칙한 투명도 변화 - 더 또렷하게
       const opacityFreq = 0.9 + rand() * 3.8;
       const opacityWave = Math.sin(t * opacityFreq + phase3);
-      const opacity = (0.4 + rand() * 0.4 + Math.abs(opacityWave) * 0.3) * 0.7;
+      const opacity = Math.min(1.0, 0.7 + rand() * 0.3 + Math.abs(opacityWave) * 0.3);
 
-      ctx.fillStyle = `rgba(100, 100, 100, ${opacity})`;
+      // 완전히 또렷한 흰색 파티클
+      ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
       ctx.fillRect(x - size / 2, y - size / 2, size, size);
     }
   });
@@ -465,22 +464,28 @@ function drawScatterEffect(
       const nx = dirX / dirLen;
       const ny = dirY / dirLen;
 
-      // 더 빠르고 불규칙한 흩어짐
-      const speed = 40 + rand() * 80;
-      const spiralEffect = Math.sin(easedT * Math.PI * 4 + rand() * Math.PI * 2) * 10;
+      // 사방으로 터지는 듯한 강한 효과
+      const speed = 80 + rand() * 120; // 더 빠르게
+      const spiralEffect = Math.sin(easedT * Math.PI * 6 + rand() * Math.PI * 2) * 30; // 더 강한 나선 효과
       const move = easedT * speed;
+      
+      // 사방으로 터지는 효과를 위한 추가 방향성
+      const angle = Math.atan2(ny, nx) + (rand() - 0.5) * 0.5;
+      const spreadX = Math.cos(angle) * move;
+      const spreadY = Math.sin(angle) * move;
 
-      const x = startX + nx * move + spiralEffect * Math.cos(easedT * Math.PI * 2);
-      const y = startY + ny * move + spiralEffect * Math.sin(easedT * Math.PI * 2);
+      const x = startX + spreadX + spiralEffect * Math.cos(easedT * Math.PI * 3);
+      const y = startY + spreadY + spiralEffect * Math.sin(easedT * Math.PI * 3);
 
-      const rotation = easedT * Math.PI * 4 * (rand() > 0.5 ? 1 : -1);
-      const sz = (0.8 + rand() * 1.5) * (1.0 + 1.5 * (1.0 - easedT));
-      const opacity = fade * (0.5 + rand() * 0.3);
+      const rotation = easedT * Math.PI * 6 * (rand() > 0.5 ? 1 : -1); // 더 빠른 회전
+      const sz = (1.0 + rand() * 2.0) * (1.0 + 2.5 * (1.0 - easedT)); // 더 큰 파티클
+      const opacity = fade * (0.8 + rand() * 0.2); // 더 또렷하게
 
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(rotation);
-      ctx.fillStyle = `rgba(100, 100, 100, ${opacity})`;
+      // 완전히 또렷한 흰색 파티클
+      ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
       ctx.fillRect(-sz / 2, -sz / 2, sz, sz);
       ctx.restore();
     }

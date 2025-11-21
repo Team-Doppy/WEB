@@ -1,36 +1,19 @@
 import { fetchAllPosts } from '@/app/lib/dataFetcher';
-import { FeedPost } from '@/app/components/FeedPost';
+import { HomeContent } from '@/app/components/HomeContent';
 
 export default async function Home() {
+  // 초기 포스트만 가져오기 (첫 페이지)
   const posts = await fetchAllPosts();
+  // 최대 20개만 초기 로드
+  const initialPosts = posts.slice(0, 20);
 
   return (
     <main className="min-h-screen bg-black">
-      <div className="flex">
-        {/* 사이드바는 layout.tsx에서 렌더링 */}
-        
-        {/* 메인 콘텐츠 영역 */}
-        <div className="flex-1 ml-64">
-          <div className="max-w-7xl mx-auto py-12 px-8">
-            {/* 피드 게시글 목록 */}
-            <div>
-              {posts.length > 0 ? (
-                posts.map((post) => (
-                  <FeedPost key={`${post.username}-${post.id}`} post={post} username={post.username} />
-                ))
-              ) : (
-                <div className="text-center py-16">
-                  <p className="text-gray-400">게시글이 없습니다.</p>
-                </div>
-              )}
-            </div>
-          </div>
+      {/* 메인 콘텐츠 영역 - 사이드바 고려하여 중앙 정렬 */}
+      <div className="ml-20 lg:ml-64 transition-all duration-150">
+        <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-16 pb-12 px-8">
+          <HomeContent initialPosts={initialPosts} />
         </div>
-
-        {/* 오른쪽 사이드바 (선택사항) */}
-        <aside className="hidden lg:block w-80 p-8">
-          {/* 추천 사용자, 광고 등 */}
-        </aside>
       </div>
     </main>
   );
