@@ -155,15 +155,20 @@ export async function fetchProfileFeedSchema(username: string): Promise<ProfileF
     return null;
   }
   
-  // 로그인 상태 확인
-  const accessToken = await getServerAccessToken();
-  const isAuthenticated = !!accessToken;
-  console.log('[fetchProfileFeedSchema] 인증 상태:', { isAuthenticated });
-  
-  // 로그인 상태에 따라 다른 API 사용
-  return isAuthenticated 
-    ? await getProfileFeedSchema(username)
-    : await getPublicProfileFeedSchema(username);
+  try {
+    // 로그인 상태 확인
+    const accessToken = await getServerAccessToken();
+    const isAuthenticated = !!accessToken;
+    console.log('[fetchProfileFeedSchema] 인증 상태:', { isAuthenticated });
+    
+    // 로그인 상태에 따라 다른 API 사용
+    return isAuthenticated 
+      ? await getProfileFeedSchema(username)
+      : await getPublicProfileFeedSchema(username);
+  } catch (error) {
+    // 차단된 사용자, 비공개 프로필 등 에러는 조용히 null 반환
+    return null;
+  }
 }
 
 /**

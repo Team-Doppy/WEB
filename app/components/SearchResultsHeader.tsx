@@ -29,9 +29,23 @@ export const SearchResultsHeader: React.FC<SearchResultsHeaderProps> = ({ onOpen
       </button>
       <button
         onClick={clearSearchResults}
-        className="text-gray-400 hover:text-white text-sm transition-colors px-3 py-2 rounded-lg hover:bg-white/5"
+        className="text-gray-400 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-white/5 flex items-center justify-center"
       >
-        지우기
+        {/* 모바일: X 아이콘, 데스크톱: 지우기 텍스트 */}
+        <svg 
+          className="w-5 h-5 lg:hidden" 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M6 18L18 6M6 6l12 12" 
+          />
+        </svg>
+        <span className="hidden lg:inline text-sm">지우기</span>
       </button>
     </div>
   );

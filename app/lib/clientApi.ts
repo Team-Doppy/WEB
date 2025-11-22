@@ -174,20 +174,27 @@ export async function getLikeCount(postId: string | number): Promise<{ likeCount
 
 /**
  * 게시글 좋아요 토글
+ * 클라이언트 상태와 서버 상태가 다를 수 있으므로, 항상 서버의 실제 상태를 확인하여 반환
  */
 export async function toggleLike(postId: string | number, isLiked: boolean): Promise<{ isLiked: boolean; likeCount: number } | null> {
   try {
     const method = isLiked ? 'DELETE' : 'POST';
-    const response = await clientApiRequest<{ success: boolean; message: string }>(
-      `/web/api/posts/${postId}/like`,
-      { method },
-      true
-    );
-
-    if (!response || !response.success) {
-      return null;
+    
+    // 서버에 토글 요청 전송
+    // 에러가 발생해도 조용히 처리하고 서버 상태를 확인하여 반환
+    try {
+      await clientApiRequest<{ success: boolean; message: string }>(
+        `/web/api/posts/${postId}/like`,
+        { method },
+        true
+      );
+    } catch (requestError) {
+      // 요청 에러는 무시 (서버 상태와 불일치할 수 있음 - 정상적인 시나리오)
+      // 예: "이미 좋아요를 누른 게시물입니다" 또는 "좋아요를 누르지 않은 게시물입니다"
     }
 
+    // 성공/실패 여부와 관계없이 서버의 실제 상태를 가져와서 반환
+    // 이렇게 하면 로컬 상태와 서버 상태가 다를 때 자동으로 동기화됨
     const [statusResult, countResult] = await Promise.all([
       getLikeStatus(postId),
       getLikeCount(postId),
@@ -202,7 +209,26 @@ export async function toggleLike(postId: string | number, isLiked: boolean): Pro
 
     return null;
   } catch (error) {
-    console.error('좋아요 토글 실패:', error);
+    // 에러 발생 시에도 서버의 실제 상태를 확인하여 반환
+    try {
+      const [statusResult, countResult] = await Promise.all([
+        getLikeStatus(postId),
+        getLikeCount(postId),
+      ]);
+
+      if (statusResult && countResult) {
+        // 에러가 발생했지만 서버 상태를 가져올 수 있으면 조용히 반환
+        return {
+          isLiked: statusResult.isLiked,
+          likeCount: countResult.likeCount,
+        };
+      }
+    } catch (syncError) {
+      // 상태 동기화도 실패한 경우에만 에러 로그
+      console.error('좋아요 상태 동기화 실패:', syncError);
+    }
+    
+    // 모든 시도가 실패하면 null 반환
     return null;
   }
 }

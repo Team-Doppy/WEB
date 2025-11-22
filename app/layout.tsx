@@ -5,6 +5,7 @@ import { Sidebar } from "./components/Sidebar";
 import { MobileNav } from "./components/MobileNav";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SearchProvider } from "./contexts/SearchContext";
+import { LikeStateProvider } from "./contexts/LikeStateContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -59,9 +60,11 @@ export default function RootLayout({
       >
         <AuthProvider>
           <SearchProvider>
-            <Sidebar />
-            <MobileNav />
-            {children}
+            <LikeStateProvider>
+              <Sidebar />
+              <MobileNav />
+              {children}
+            </LikeStateProvider>
           </SearchProvider>
         </AuthProvider>
       </body>

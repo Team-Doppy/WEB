@@ -57,11 +57,18 @@ body {
 [data-mobile-vertical="true"] {
   writing-mode: vertical-rl;
   text-orientation: mixed;
+  overflow: visible;
+  word-break: keep-all;
+  white-space: nowrap;
+  line-height: 1.6;
 }
 
 @media (min-width: 1024px) {
   [data-mobile-vertical="true"] {
     writing-mode: horizontal-tb;
     text-orientation: mixed;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.2;
   }
 }

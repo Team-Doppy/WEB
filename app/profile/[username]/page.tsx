@@ -19,7 +19,7 @@ export default async function UserPage({ params }: PageProps) {
   const schema = await fetchProfileFeedSchema(validUsername);
   
   if (!schema) {
-      return (
+    return (
       <div className="min-h-screen bg-black">
         <main className="ml-0 lg:ml-64 transition-all duration-150">
           <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-16 pb-12 px-4 lg:px-8">
@@ -107,22 +107,25 @@ export async function generateMetadata({ params }: PageProps): Promise<any> {
   const userInfo = schema.userInfo;
   
   // 프로필 이미지 URL 처리 (절대 URL로 변환)
+  // userInfo와 profile 둘 다 확인
+  const rawProfileImageUrl = userInfo.profileImageUrl || profile?.profileImageUrl || null;
   let profileImageUrl: string | undefined = undefined;
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL 
     ? `https://${process.env.VERCEL_URL}` 
-    : 'https://doppy.app';
+    : 'https://doppy.app');
   
-  if (userInfo.profileImageUrl) {
+  if (rawProfileImageUrl && rawProfileImageUrl.trim() !== '' && rawProfileImageUrl !== 'null') {
+    const trimmedUrl = rawProfileImageUrl.trim();
     // 이미 절대 URL인 경우
-    if (userInfo.profileImageUrl.startsWith('http://') || userInfo.profileImageUrl.startsWith('https://')) {
-      profileImageUrl = userInfo.profileImageUrl;
-    } else if (userInfo.profileImageUrl.startsWith('/')) {
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      profileImageUrl = trimmedUrl;
+    } else if (trimmedUrl.startsWith('/')) {
       // 상대 경로인 경우 API URL과 결합
-      profileImageUrl = apiBaseUrl ? `${apiBaseUrl}${userInfo.profileImageUrl}` : `${siteUrl}${userInfo.profileImageUrl}`;
+      profileImageUrl = apiBaseUrl ? `${apiBaseUrl}${trimmedUrl}` : `${siteUrl}${trimmedUrl}`;
     } else {
       // API URL과 결합
-      profileImageUrl = apiBaseUrl ? `${apiBaseUrl}/${userInfo.profileImageUrl}` : `${siteUrl}/${userInfo.profileImageUrl}`;
+      profileImageUrl = apiBaseUrl ? `${apiBaseUrl}/${trimmedUrl}` : `${siteUrl}/${trimmedUrl}`;
     }
   }
   
@@ -142,15 +145,15 @@ export async function generateMetadata({ params }: PageProps): Promise<any> {
       images: profileImageUrl ? [
         {
           url: profileImageUrl,
-          width: 400,
-          height: 400,
+          width: 1200,
+          height: 1200,
           alt: `${displayName} 프로필 이미지`,
         },
       ] : [
         {
           url: `${siteUrl}/logo.png`,
-          width: 400,
-          height: 400,
+          width: 1200,
+          height: 630,
           alt: 'Doppy',
         },
       ],

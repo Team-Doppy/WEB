@@ -24,7 +24,7 @@ export default async function Home() {
       {/* 메인 콘텐츠 영역 - 사이드바 고려하여 중앙 정렬 */}
       {/* 모바일: 전체 너비 + 하단 네비게이션 패딩, 데스크톱: 사이드바 너비만큼 왼쪽 마진 */}
       <div className="ml-0 lg:ml-64 transition-all duration-150 pb-16 lg:pb-0">
-        <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-[30px] lg:pt-16 pb-2 lg:pb-12 px-2 lg:px-8">
+        <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-[30px] lg:pt-16 pb-2 lg:pb-12 px-4 lg:px-8">
           <HomeContent initialPosts={initialPosts} />
         </div>
       </div>

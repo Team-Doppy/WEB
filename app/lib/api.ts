@@ -154,6 +154,23 @@ async function apiRequest<T>(endpoint: string, options?: RequestInit, requireAut
         return null;
       }
       
+      // 400 Bad Request: 차단된 사용자, 잘못된 요청 등
+      if (response.status === 400) {
+        // 프로필 관련 요청인 경우 조용히 null 반환 (차단된 사용자 등)
+        if (endpoint.includes('/profile/') && endpoint.includes('/feed/schema')) {
+          return null;
+        }
+        // 다른 400 에러는 일반 에러로 처리
+        let errorMessage = `${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          // JSON 파싱 실패 시 기본 메시지 사용
+        }
+        throw new Error(`API 요청 실패: ${errorMessage}`);
+      }
+      
       // 401 Unauthorized: 인증 필요
       if (response.status === 401) {
         console.warn(`인증 오류 (${endpoint}): 401`);
@@ -410,44 +427,49 @@ export async function getUserPosts(
  * @returns 피드 스키마 또는 null
  */
 export async function getPublicProfileFeedSchema(username: string) {
-  const response = await apiRequest<{
-    success: boolean;
-    data: {
-      userInfo: {
-        id: number;
-        username: string;
-        alias: string;
-        profileImageUrl: string | null;
-        isOwnProfile: boolean;
-        totalPosts: number;
-        followersCount: number;
-        followingCount: number;
-        isFollowing: boolean;
-        canFollow: boolean;
-        links: string[];
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      data: {
+        userInfo: {
+          id: number;
+          username: string;
+          alias: string;
+          profileImageUrl: string | null;
+          isOwnProfile: boolean;
+          totalPosts: number;
+          followersCount: number;
+          followingCount: number;
+          isFollowing: boolean;
+          canFollow: boolean;
+          links: string[];
+        };
+        categories: Array<{
+          id: number;
+          name: string;
+          displayOrder: number;
+          postCount: number;
+          isPrivate: boolean;
+          isSystem: boolean;
+          description: string | null;
+        }>;
+        postsByCategory: Record<string, Array<{
+          id: number;
+          order: number;
+          globalIndex: number;
+        }>>;
+        systemCategoryMappings: Record<string, number[]>;
       };
-      categories: Array<{
-        id: number;
-        name: string;
-        displayOrder: number;
-        postCount: number;
-        isPrivate: boolean;
-        isSystem: boolean;
-        description: string | null;
-      }>;
-      postsByCategory: Record<string, Array<{
-        id: number;
-        order: number;
-        globalIndex: number;
-      }>>;
-      systemCategoryMappings: Record<string, number[]>;
-    };
-    message: string | null;
-  }>(`/web/api/profile/${username}/feed/schema`, undefined, false); // 인증 불필요 (서버에서 두 경로 모두 처리)
-  
-  if (!response || !response.success || !response.data) return null;
-  
-  return response.data;
+      message: string | null;
+    }>(`/web/api/profile/${username}/feed/schema`, undefined, false); // 인증 불필요 (서버에서 두 경로 모두 처리)
+    
+    if (!response || !response.success || !response.data) return null;
+    
+    return response.data;
+  } catch (error) {
+    // 차단된 사용자, 비공개 프로필 등 에러는 조용히 null 반환
+    return null;
+  }
 }
 
 /**
@@ -456,44 +478,49 @@ export async function getPublicProfileFeedSchema(username: string) {
  * @returns 피드 스키마 또는 null
  */
 export async function getProfileFeedSchema(username: string) {
-  const response = await apiRequest<{
-    success: boolean;
-    data: {
-      userInfo: {
-        id: number;
-        username: string;
-        alias: string;
-        profileImageUrl: string | null;
-        isOwnProfile: boolean;
-        totalPosts: number;
-        followersCount: number;
-        followingCount: number;
-        isFollowing: boolean;
-        canFollow: boolean;
-        links: string[];
+  try {
+    const response = await apiRequest<{
+      success: boolean;
+      data: {
+        userInfo: {
+          id: number;
+          username: string;
+          alias: string;
+          profileImageUrl: string | null;
+          isOwnProfile: boolean;
+          totalPosts: number;
+          followersCount: number;
+          followingCount: number;
+          isFollowing: boolean;
+          canFollow: boolean;
+          links: string[];
+        };
+        categories: Array<{
+          id: number;
+          name: string;
+          displayOrder: number;
+          postCount: number;
+          isPrivate: boolean;
+          isSystem: boolean;
+          description: string | null;
+        }>;
+        postsByCategory: Record<string, Array<{
+          id: number;
+          order: number;
+          globalIndex: number;
+        }>>;
+        systemCategoryMappings: Record<string, number[]>;
       };
-      categories: Array<{
-        id: number;
-        name: string;
-        displayOrder: number;
-        postCount: number;
-        isPrivate: boolean;
-        isSystem: boolean;
-        description: string | null;
-      }>;
-      postsByCategory: Record<string, Array<{
-        id: number;
-        order: number;
-        globalIndex: number;
-      }>>;
-      systemCategoryMappings: Record<string, number[]>;
-    };
-    message: string | null;
-  }>(`/web/api/profile/${username}/feed/schema`, undefined, true); // 인증 필요
-  
-  if (!response || !response.success || !response.data) return null;
-  
-  return response.data;
+      message: string | null;
+    }>(`/web/api/profile/${username}/feed/schema`, undefined, true); // 인증 필요
+    
+    if (!response || !response.success || !response.data) return null;
+    
+    return response.data;
+  } catch (error) {
+    // 차단된 사용자, 비공개 프로필 등 에러는 조용히 null 반환
+    return null;
+  }
 }
 
 /**

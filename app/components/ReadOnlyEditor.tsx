@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useRef, useCallback, useState } from 'react';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { Post } from '@/app/types/post.types';
 import { BlockRenderer } from './BlockRenderer';
 import { DrawingOverlay } from './DrawingOverlay';
 import { LazyBlock } from './LazyBlock';
 import { formatNumber } from '@/app/utils/format';
 import { formatDate } from '@/app/utils/date';
-import { toggleLike } from '@/app/lib/clientApi';
+import { toggleLike as toggleLikeApi } from '@/app/lib/clientApi';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { useLikeState } from '@/app/contexts/LikeStateContext';
 import { LoginForm } from './LoginForm';
 
 interface ReadOnlyEditorProps {
@@ -17,14 +18,23 @@ interface ReadOnlyEditorProps {
 
 export const ReadOnlyEditor: React.FC<ReadOnlyEditorProps> = ({ post }) => {
   const { isAuthenticated } = useAuth();
+  const { getLikeState, initializeLikeState, toggleLike: toggleLikeState, syncWithServer } = useLikeState();
   const nodeRefsMap = useRef<Map<string, HTMLElement>>(new Map());
   const contentRef = useRef<HTMLDivElement>(null);
   const INITIAL_RENDER_COUNT = 3; // 상단 3개 블록은 즉시 렌더링
   const [renderedIndices, setRenderedIndices] = useState<Set<number>>(new Set());
-  const [isLiked, setIsLiked] = useState(post.isLiked ?? false);
-  const [likeCount, setLikeCount] = useState(post.likeCount);
-  const [isLiking, setIsLiking] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+
+  // 초기 상태 설정
+  useEffect(() => {
+    initializeLikeState(post.id, post.isLiked ?? false, post.likeCount);
+  }, [post.id, post.isLiked, post.likeCount, initializeLikeState]);
+
+  // 현재 상태 가져오기
+  const likeState = getLikeState(post.id);
+  const isLiked = likeState?.isLiked ?? (post.isLiked ?? false);
+  const likeCount = likeState?.likeCount ?? post.likeCount;
+  const isLiking = likeState?.isPending ?? false;
 
   // 노드 ref 등록 (useCallback으로 메모이제이션)
   const registerNodeRef = useCallback((id: string, element: HTMLElement | null) => {
@@ -63,33 +73,49 @@ export const ReadOnlyEditor: React.FC<ReadOnlyEditorProps> = ({ post }) => {
 
     if (isLiking) return;
 
-    setIsLiking(true);
-    const previousIsLiked = isLiked;
-    const previousLikeCount = likeCount;
-    const newIsLiked = !isLiked;
+    // 낙관적 업데이트: 즉시 로컬 상태 변경
+    toggleLikeState(post.id, isLiked);
 
-    // 낙관적 업데이트
-    setIsLiked(newIsLiked);
-    setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
-
-    try {
-      // 토글 전 상태(isLiked)를 전달하여 서버에서 반대 상태로 변경
-      const result = await toggleLike(post.id, isLiked);
-      if (result) {
-        setIsLiked(result.isLiked);
-        setLikeCount(result.likeCount);
-      } else {
-        // 실패 시 롤백
-        setIsLiked(previousIsLiked);
-        setLikeCount(previousLikeCount);
+    // 백그라운드에서 서버 요청 (변경 전 상태로 요청 - 서버가 토글 처리)
+    (async () => {
+      try {
+        // 변경 전 상태를 기준으로 서버에 토글 요청
+        // toggleLikeApi 내부에서 에러가 발생해도 서버 상태를 확인하여 반환
+        const result = await toggleLikeApi(post.id, isLiked);
+        if (result) {
+          // 서버 응답과 로컬 상태 비교 후 동기화
+          syncWithServer(post.id, result.isLiked, result.likeCount);
+        } else {
+          // 응답이 없으면 서버 상태를 직접 확인하여 동기화
+          try {
+            const { getLikeStatus, getLikeCount } = await import('@/app/lib/clientApi');
+            const [statusResult, countResult] = await Promise.all([
+              getLikeStatus(post.id),
+              getLikeCount(post.id),
+            ]);
+            if (statusResult && countResult) {
+              syncWithServer(post.id, statusResult.isLiked, countResult.likeCount);
+            }
+          } catch (syncError) {
+            // 조용히 실패 (이미 에러가 발생한 상황)
+          }
+        }
+      } catch (error) {
+        // 에러 발생 시 서버 상태를 확인하여 동기화 (에러는 출력하지 않음)
+        try {
+          const { getLikeStatus, getLikeCount } = await import('@/app/lib/clientApi');
+          const [statusResult, countResult] = await Promise.all([
+            getLikeStatus(post.id),
+            getLikeCount(post.id),
+          ]);
+          if (statusResult && countResult) {
+            syncWithServer(post.id, statusResult.isLiked, countResult.likeCount);
+          }
+        } catch (syncError) {
+          // 조용히 실패
+        }
       }
-    } catch (error) {
-      // 실패 시 롤백
-      setIsLiked(previousIsLiked);
-      setLikeCount(previousLikeCount);
-    } finally {
-      setIsLiking(false);
-    }
+    })();
   };
 
   return (
