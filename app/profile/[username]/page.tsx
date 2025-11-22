@@ -141,7 +141,7 @@ export async function generateMetadata({ params }: PageProps): Promise<any> {
   
   // 별칭 또는 사용자명
   const displayName = userInfo.alias || validUsername;
-  const description = profile?.selfIntroduction || `${displayName}님의 프로필을 확인해보세요.`;
+  const description = `${validUsername}님의 프로필을 확인해보세요.`;
   const profileUrl = `${siteUrl}/profile/${validUsername}`;
   
   return {
