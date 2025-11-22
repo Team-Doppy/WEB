@@ -203,11 +203,11 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#1a1a1a] rounded-2xl border border-white/20 shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end lg:items-center justify-center p-4">
+      <div className="bg-[#1a1a1a] rounded-t-3xl lg:rounded-2xl border-t lg:border border-white/20 shadow-2xl max-w-4xl w-full max-h-[90vh] lg:max-h-[95vh] overflow-y-auto">
         {/* 헤더 */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h2 className="text-3xl font-bold text-white">프로필 편집</h2>
+        <div className="flex items-center justify-between p-4 lg:p-6 border-b border-white/10">
+          <h2 className="text-xl lg:text-3xl font-bold text-white">프로필 편집</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg"
@@ -218,21 +218,21 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-8">
+        <form onSubmit={handleSubmit} className="p-4 lg:p-8 space-y-6 lg:space-y-8">
           {/* 프로필 이미지 */}
-          <div className="flex flex-col items-center gap-5">
+          <div className="flex flex-col items-center gap-4 lg:gap-5">
             <ProfileImage
               src={profileImageUrl || undefined}
               alt={initialData.username}
               size="xl"
-              className="!w-36 !h-36"
+              className="!w-24 !h-24 lg:!w-36 lg:!h-36"
             />
-            <div className="flex gap-3">
+            <div className="flex gap-2 lg:gap-3 w-full max-w-md">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingImage}
-                className="px-8 py-3.5 bg-white/10 hover:bg-white/20 text-white text-lg rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="flex-1 px-4 lg:px-8 py-2.5 lg:py-3.5 bg-white/10 hover:bg-white/20 text-white text-sm lg:text-lg rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 {uploadingImage ? '업로드 중...' : '이미지 변경'}
               </button>
@@ -241,7 +241,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                   type="button"
                   onClick={handleDeleteImage}
                   disabled={uploadingImage}
-                  className="px-8 py-3.5 bg-white/10 hover:bg-white/20 text-white text-lg rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  className="flex-1 px-4 lg:px-8 py-2.5 lg:py-3.5 bg-white/10 hover:bg-white/20 text-white text-sm lg:text-lg rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                   이미지 삭제
                 </button>
@@ -258,7 +258,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
           {/* 별칭 */}
           <div>
-            <label htmlFor="alias" className="block text-base font-medium text-gray-300 mb-3">
+            <label htmlFor="alias" className="block text-sm lg:text-base font-medium text-gray-300 mb-2 lg:mb-3">
               별칭
             </label>
             <input
@@ -266,7 +266,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               type="text"
               value={alias}
               onChange={(e) => setAlias(e.target.value)}
-              className="w-full px-4 py-3 bg-black/50 text-white text-base rounded-xl border border-white/10 focus:outline-none focus:border-white/30 focus:bg-black/70 transition-all placeholder:text-gray-500"
+              className="w-full px-4 py-2.5 lg:py-3 bg-black/50 text-white text-sm lg:text-base rounded-xl border border-white/10 focus:outline-none focus:border-white/30 focus:bg-black/70 transition-all placeholder:text-gray-500"
               placeholder="별칭을 입력하세요"
               maxLength={50}
             />
@@ -274,14 +274,14 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
           {/* 자기소개 */}
           <div>
-            <label htmlFor="selfIntroduction" className="block text-base font-medium text-gray-300 mb-3">
+            <label htmlFor="selfIntroduction" className="block text-sm lg:text-base font-medium text-gray-300 mb-2 lg:mb-3">
               자기소개
             </label>
             <textarea
               id="selfIntroduction"
               value={selfIntroduction}
               onChange={(e) => setSelfIntroduction(e.target.value)}
-              className="w-full px-4 py-3 bg-black/50 text-white text-base rounded-xl border border-white/10 focus:outline-none focus:border-white/30 focus:bg-black/70 transition-all resize-none placeholder:text-gray-500"
+              className="w-full px-4 py-2.5 lg:py-3 bg-black/50 text-white text-sm lg:text-base rounded-xl border border-white/10 focus:outline-none focus:border-white/30 focus:bg-black/70 transition-all resize-none placeholder:text-gray-500"
               placeholder="나의 설명"
               rows={5}
               maxLength={500}
@@ -293,8 +293,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
           {/* 링크 */}
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <label className="block text-base font-medium text-gray-300">
+            <div className="flex items-center justify-between mb-3 lg:mb-4">
+              <label className="block text-sm lg:text-base font-medium text-gray-300">
                 링크
               </label>
               <button
@@ -305,7 +305,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                 +
               </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2 lg:space-y-3">
               {links.map((link, index) => (
                 <div key={index} className="space-y-2">
                   <div className="flex gap-2 items-center">
@@ -313,13 +313,13 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                       type="url"
                       value={link}
                       onChange={(e) => handleLinkChange(index, e.target.value)}
-                      className="flex-1 px-4 py-2.5 bg-black/50 text-white text-base rounded-lg border border-white/10 focus:outline-none focus:border-white/30 focus:bg-black/70 transition-all placeholder:text-gray-500"
+                      className="flex-1 px-3 lg:px-4 py-2 lg:py-2.5 bg-black/50 text-white text-sm lg:text-base rounded-lg border border-white/10 focus:outline-none focus:border-white/30 focus:bg-black/70 transition-all placeholder:text-gray-500"
                       placeholder="https://..."
                     />
                     <button
                       type="button"
                       onClick={() => handleRemoveLink(index)}
-                      className="w-8 h-8 flex items-center justify-center text-white hover:bg-white/10 rounded-lg transition-all"
+                      className="w-8 h-8 flex items-center justify-center text-white hover:bg-white/10 rounded-lg transition-all flex-shrink-0"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -331,14 +331,14 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                       type="text"
                       value={linkTitles[link] || ''}
                       onChange={(e) => handleLinkTitleChange(link, e.target.value)}
-                      className="w-full px-4 py-2.5 bg-black/50 text-white text-base rounded-lg border border-white/10 focus:outline-none focus:border-white/30 focus:bg-black/70 transition-all placeholder:text-gray-500"
+                      className="w-full px-3 lg:px-4 py-2 lg:py-2.5 bg-black/50 text-white text-sm lg:text-base rounded-lg border border-white/10 focus:outline-none focus:border-white/30 focus:bg-black/70 transition-all placeholder:text-gray-500"
                       placeholder="링크 제목 (선택사항)"
                     />
                   )}
                 </div>
               ))}
               {links.length === 0 && (
-                <p className="text-gray-500 text-sm text-center py-6">
+                <p className="text-gray-500 text-xs lg:text-sm text-center py-4 lg:py-6">
                   링크가 없습니다. + 버튼을 눌러 링크를 추가하세요.
                 </p>
               )}
@@ -347,22 +347,22 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
           {/* 에러 메시지 */}
           {error && (
-            <p className="text-red-500 text-base">{error}</p>
+            <p className="text-red-500 text-sm lg:text-base">{error}</p>
           )}
 
           {/* 버튼 */}
-          <div className="flex gap-3 pt-2 border-t border-white/10">
+          <div className="flex gap-2 lg:gap-3 pt-2 border-t border-white/10 pb-4 lg:pb-0">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3.5 bg-white/5 hover:bg-white/10 text-white text-base rounded-xl transition-all font-medium"
+              className="flex-1 px-4 lg:px-6 py-2.5 lg:py-3.5 bg-white/5 hover:bg-white/10 text-white text-sm lg:text-base rounded-xl transition-all font-medium"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-6 py-3.5 bg-white text-black text-base font-semibold rounded-xl hover:bg-gray-100 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 lg:px-6 py-2.5 lg:py-3.5 bg-white text-black text-sm lg:text-base font-semibold rounded-xl hover:bg-gray-100 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? '저장 중...' : '저장'}
             </button>

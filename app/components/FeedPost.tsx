@@ -44,15 +44,16 @@ const ThumbnailImageWithError: React.FC<ThumbnailImageWithErrorProps> = ({ src, 
 interface FeedPostProps {
   post: Post;
   username: string;
+  isFirst?: boolean;
 }
 
-export const FeedPost: React.FC<FeedPostProps> = ({ post, username }) => {
+export const FeedPost: React.FC<FeedPostProps> = ({ post, username, isFirst = false }) => {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const postSlug = createPostSlug(post.title, post.id);
   const postUrl = `/${post.id}/${postSlug}`;
   
-  const [isLiked, setIsLiked] = useState(post.isLiked);
+  const [isLiked, setIsLiked] = useState(post.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [isLiking, setIsLiking] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -80,12 +81,14 @@ export const FeedPost: React.FC<FeedPostProps> = ({ post, username }) => {
     setIsLiking(true);
     const previousIsLiked = isLiked;
     const previousLikeCount = likeCount;
+    const newIsLiked = !isLiked;
 
     // 낙관적 업데이트
-    setIsLiked(!isLiked);
+    setIsLiked(newIsLiked);
     setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
 
     try {
+      // 토글 전 상태(isLiked)를 전달하여 서버에서 반대 상태로 변경
       const result = await toggleLike(post.id, isLiked);
       if (result) {
         setIsLiked(result.isLiked);
@@ -106,11 +109,11 @@ export const FeedPost: React.FC<FeedPostProps> = ({ post, username }) => {
 
   return (
     <article 
-      className="mb-12 pb-12 cursor-pointer relative"
+      className={`mb-2 lg:mb-12 pb-2 lg:pb-12 cursor-pointer relative bg-black ${isFirst ? 'pt-4 lg:pt-0' : ''}`}
       onClick={handlePostClick}
     >
       {/* 작성자 정보 */}
-      <div className="flex items-center gap-3 mb-6" data-author-section>
+      <div className="flex items-center gap-2 lg:gap-3 mb-3 lg:mb-6" data-author-section>
         <Link 
           href={`/profile/${username}`} 
           className="flex-shrink-0"
@@ -120,7 +123,7 @@ export const FeedPost: React.FC<FeedPostProps> = ({ post, username }) => {
             src={post.authorProfileImageUrl || undefined}
             alt={post.author}
             size="sm"
-            className="w-10 h-10 ring-2 ring-white/30"
+            className="w-8 h-8 lg:w-10 lg:h-10 ring-2 ring-white/30"
           />
         </Link>
         <div className="flex-1 min-w-0">
@@ -139,17 +142,17 @@ export const FeedPost: React.FC<FeedPostProps> = ({ post, username }) => {
         </span>
       </div>
 
-      {/* 가로 배치: 이미지 + 텍스트 */}
-      <div className="flex gap-12 items-start mb-6">
-        {/* 썸네일 이미지 */}
-        <div className="block flex-shrink-0">
-          <div className="relative w-[400px] lg:w-[500px] xl:w-[600px] aspect-[4/5] bg-gray-900 rounded-lg overflow-hidden">
+      {/* 모바일: 가로 배치 (이미지 옆에 세로 제목), 데스크톱: 가로 배치 */}
+      <div className="flex flex-row lg:flex-row gap-3 lg:gap-12 items-start mb-3 lg:mb-6">
+        {/* 썸네일 이미지 - 모바일에서 전체 너비, 데스크톱에서 큰 크기 */}
+        <div className="flex-1 lg:flex-shrink-0">
+          <div className="relative w-full lg:w-[500px] xl:w-[600px] aspect-[4/5] bg-gray-900 rounded-lg overflow-hidden">
             <ThumbnailImageWithError
               src={post.thumbnailImageUrl}
               alt={post.title}
             />
             {/* 조회수 - 이미지 하단에 검은색 원형 배경 */}
-            <div className="absolute bottom-0 right-0 pr-4 pb-4">
+            <div className="absolute bottom-0 right-0 pr-4 pb-4 z-10">
               <div className="w-8 h-8 rounded-full bg-black/70 flex items-center justify-center">
                 <span className="text-white text-xs font-medium">{formatNumber(post.viewCount)}</span>
               </div>
@@ -157,34 +160,38 @@ export const FeedPost: React.FC<FeedPostProps> = ({ post, username }) => {
           </div>
         </div>
 
-        {/* 텍스트 콘텐츠 */}
-        <div className="flex-1 min-w-0">
-          {/* 제목 및 요약 */}
-          <div className="block group">
-            <h2 className="text-white font-bold text-3xl lg:text-4xl xl:text-5xl mb-6 group-hover:text-gray-300 transition-colors leading-tight">
+        {/* 텍스트 콘텐츠 - 모바일: 이미지 옆에 세로 배치, 데스크톱: 가로 배치 */}
+        <div className="flex-shrink-0 flex items-center lg:items-start lg:flex-col lg:justify-start lg:w-full lg:max-w-md">
+          {/* 제목 - 모바일: 세로, 데스크톱: 가로 */}
+          <div className="block group w-full lg:w-full">
+            <h2 
+              className="text-white font-bold text-xl lg:text-5xl xl:text-6xl group-hover:text-gray-300 transition-colors leading-tight bg-black lg:mb-6 text-left w-full" 
+              data-mobile-vertical="true"
+            >
               {post.title}
             </h2>
-            {post.summary && (
-              <p className="text-gray-400 text-xl lg:text-2xl leading-relaxed line-clamp-3">
-                {post.summary}
-              </p>
-            )}
           </div>
+          {/* 데스크톱에서만 summary 표시 */}
+          {post.summary && (
+            <p className="hidden lg:block text-gray-400 text-xl lg:text-2xl leading-relaxed line-clamp-3 mt-4 text-left w-full break-words overflow-wrap-anywhere hyphens-auto" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+              {post.summary}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* 하트 버튼 - 카드 오른쪽 하단 */}
+      {/* 하트 버튼 - 카드 전체 우측 하단 */}
       <button
         data-like-button
         onClick={handleLikeClick}
         disabled={isLiking}
-        className={`absolute bottom-[75px] right-0 flex items-center gap-3 transition-colors cursor-pointer hover:opacity-80 ${
+        className={`absolute bottom-0 right-0 flex items-center gap-2 lg:gap-3 transition-colors cursor-pointer hover:opacity-80 ${
           isLiked ? 'text-red-500' : 'text-gray-500'
-        } ${isLiking ? 'opacity-50 cursor-not-allowed' : ''} mr-4`}
+        } ${isLiking ? 'opacity-50 cursor-not-allowed' : ''} mr-2 lg:mr-4 mb-2 lg:mb-4`}
       >
         {isLiked ? (
           <svg 
-            className="w-8 h-8 text-red-500" 
+            className="w-5 h-5 lg:w-8 lg:h-8 text-red-500" 
             fill="currentColor" 
             viewBox="0 0 24 24"
           >
@@ -192,7 +199,7 @@ export const FeedPost: React.FC<FeedPostProps> = ({ post, username }) => {
           </svg>
         ) : (
           <svg 
-            className="w-8 h-8 text-gray-500" 
+            className="w-5 h-5 lg:w-8 lg:h-8 text-gray-500" 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
@@ -205,7 +212,7 @@ export const FeedPost: React.FC<FeedPostProps> = ({ post, username }) => {
             />
           </svg>
         )}
-        <span className="text-white text-base font-medium">{formatNumber(likeCount)}</span>
+        <span className="text-white text-sm lg:text-base font-medium">{formatNumber(likeCount)}</span>
       </button>
 
       {/* 로그인 오버레이 */}
@@ -215,16 +222,6 @@ export const FeedPost: React.FC<FeedPostProps> = ({ post, username }) => {
             className="bg-[#1a1a1a] rounded-2xl border border-white/20 shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto py-16 md:py-20 px-8 md:px-12"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={() => setIsLoginOpen(false)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
             <LoginForm
               onSuccess={() => {
                 setIsLoginOpen(false);

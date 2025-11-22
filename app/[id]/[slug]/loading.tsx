@@ -1,7 +1,7 @@
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-[#121212]">
-      <div className="pt-14 pb-16 px-4 ml-20 lg:ml-64 transition-all duration-150">
+    <div className="min-h-screen bg-black">
+      <div className="pt-14 pb-16 px-4 ml-0 lg:ml-64 transition-all duration-150">
         <div className="max-w-4xl mx-auto">
           {/* 로딩 스켈레톤 */}
           <div>

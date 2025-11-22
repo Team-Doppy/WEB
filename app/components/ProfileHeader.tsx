@@ -42,6 +42,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const [isFollowingLoading, setIsFollowingLoading] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isLinksExpanded, setIsLinksExpanded] = useState(false);
 
   // 초기 친구 상태 확인
   useEffect(() => {
@@ -104,12 +105,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   };
 
   return (
-    <div className="mb-16 pb-10 border-b border-white/10 px-6 md:px-8">
+    <div className="mb-8 lg:mb-16 pb-6 lg:pb-10 border-b border-white/10 px-4 md:px-6 lg:px-8">
       {/* 프로필 헤더 - 가로 레이아웃 */}
-      <div className="flex gap-8 md:gap-12 items-start">
+      <div className="flex gap-4 md:gap-8 lg:gap-12 items-start">
         {/* 왼쪽: 프로필 이미지 - 고정 크기로 설정 */}
         <div className="flex-shrink-0">
-          <div className="w-[180px] h-[180px] md:w-[220px] md:h-[220px] lg:w-[240px] lg:h-[240px] flex items-center justify-center">
+          <div className="w-[100px] h-[100px] md:w-[180px] md:h-[180px] lg:w-[220px] lg:h-[220px] flex items-center justify-center">
             <ProfileImage
               src={profileImageUrl || undefined}
               alt={username}
@@ -122,12 +123,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         {/* 오른쪽: 사용자 정보 */}
         <div className="flex-1 min-w-0 flex flex-col">
           {/* 사용자명과 별칭 */}
-          <div className="mb-3">
-            <h2 className="text-white text-3xl md:text-4xl lg:text-5xl font-semibold mb-1">
+          <div className="mb-2 lg:mb-3">
+            <h2 className="text-white text-xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold mb-1">
               {username}
             </h2>
             {alias && alias !== username && (
-              <p className="text-white text-xl md:text-2xl lg:text-3xl">
+              <p className="text-white text-base md:text-xl lg:text-2xl xl:text-3xl">
                 {alias}
               </p>
             )}
@@ -135,51 +136,76 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
           {/* 소개글 (BIO) */}
           {selfIntroduction && (
-            <p className="text-gray-300 text-base md:text-lg lg:text-xl mb-4 leading-relaxed whitespace-pre-line">
+            <p className="text-gray-300 text-sm md:text-base lg:text-lg xl:text-xl mb-3 lg:mb-4 leading-relaxed whitespace-pre-line">
               {selfIntroduction}
             </p>
           )}
 
           {/* 링크 */}
           {links && links.length > 0 && (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-6">
-              {links.map((link, index) => {
-                let displayText = linkTitles[link] || link;
-                try {
-                  const url = new URL(link);
-                  if (!linkTitles[link]) {
-                    // 호스트명만 표시 (www 제거)
-                    displayText = url.hostname.replace(/^www\./, '');
+            <div className="mb-4 lg:mb-6">
+              <div className="flex flex-col gap-y-1.5 lg:gap-y-2">
+                {(links.length > 2 && !isLinksExpanded ? links.slice(0, 2) : links).map((link, index) => {
+                  let displayText = linkTitles[link] || link;
+                  try {
+                    const url = new URL(link);
+                    if (!linkTitles[link]) {
+                      // 호스트명만 표시 (www 제거)
+                      displayText = url.hostname.replace(/^www\./, '');
+                    }
+                  } catch {
+                    // URL 파싱 실패 시 원본 링크 표시
                   }
-                } catch {
-                  // URL 파싱 실패 시 원본 링크 표시
-                }
-                
-                const faviconUrl = getFaviconUrl(link);
-                
-                return (
-                  <a
-                    key={index}
-                    href={link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 text-base md:text-lg font-medium transition-colors"
-                  >
-                    {faviconUrl && (
-                      <img
-                        src={faviconUrl}
-                        alt=""
-                        className="w-5 h-5 rounded"
-                        onError={(e) => {
-                          // 파비콘 로드 실패 시 이미지 숨기기
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    )}
-                    <span>{displayText}</span>
-                  </a>
-                );
-              })}
+                  
+                  const faviconUrl = getFaviconUrl(link);
+                  
+                  return (
+                    <a
+                      key={index}
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm md:text-base lg:text-lg font-medium transition-colors w-full min-w-0"
+                    >
+                      {faviconUrl && (
+                        <img
+                          src={faviconUrl}
+                          alt=""
+                          className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 rounded"
+                          onError={(e) => {
+                            // 파비콘 로드 실패 시 이미지 숨기기
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      )}
+                      <span className="truncate">{displayText}</span>
+                    </a>
+                  );
+                })}
+              </div>
+              {/* 3개 이상 링크가 있을 때 토글 버튼 */}
+              {links.length > 2 && (
+                <button
+                  onClick={() => setIsLinksExpanded(!isLinksExpanded)}
+                  className="mt-2 text-gray-400 hover:text-white text-sm font-medium transition-colors flex items-center gap-1"
+                >
+                  {isLinksExpanded ? (
+                    <>
+                      <span>접기</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                    </>
+                  ) : (
+                    <>
+                      <span>{links.length - 2}개 더 보기</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           )}
 
@@ -189,7 +215,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               <button
                 onClick={handleFollow}
                 disabled={isFollowingLoading}
-                className={`w-full max-w-lg py-3 px-10 rounded-2xl text-base font-semibold transition-all ${
+                className={`w-full max-w-lg py-2.5 md:py-3 px-6 md:px-10 rounded-xl md:rounded-2xl text-sm md:text-base font-semibold transition-all ${
                   friendStatus?.status === 'ACCEPTED' || friendStatus?.status === 'REQUESTED'
                     ? 'bg-white/10 text-white hover:bg-white/15 border border-white/20'
                     : 'bg-white text-black hover:bg-gray-100'
@@ -206,7 +232,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             ) : (
               <button 
                 onClick={() => setIsEditModalOpen(true)}
-                className="w-full max-w-lg py-3 px-10 rounded-2xl text-base font-semibold bg-white/10 text-white hover:bg-white/15 transition-all border border-white/20"
+                className="w-full max-w-lg py-2.5 md:py-3 px-6 md:px-10 rounded-xl md:rounded-2xl text-sm md:text-base font-semibold bg-white/10 text-white hover:bg-white/15 transition-all border border-white/20"
               >
                 프로필 편집
               </button>
@@ -222,16 +248,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             className="bg-[#1a1a1a] rounded-2xl border border-white/20 shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto py-16 md:py-20 px-8 md:px-12"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={() => setIsLoginOpen(false)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
             <LoginForm
               onSuccess={() => {
                 setIsLoginOpen(false);

@@ -21,8 +21,8 @@ export const PrivatePostView: React.FC<PrivatePostViewProps> = ({
   // 로그인한 상태에서는 다른 UI 표시
   if (isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#121212]">
-        <main className="pt-8 pb-16 px-4 ml-20 lg:ml-64 transition-all duration-150">
+      <div className="min-h-screen bg-black">
+        <main className="pt-8 pb-16 px-4 ml-0 lg:ml-64 transition-all duration-150">
           <div className="max-w-4xl mx-auto">
             {/* 비공개 글 메시지 - 로그인한 상태 */}
             <div className="flex flex-col items-center justify-center py-20 px-4">
@@ -52,7 +52,7 @@ export const PrivatePostView: React.FC<PrivatePostViewProps> = ({
   // 로그인하지 않은 상태
   return (
     <div className="min-h-screen bg-[#121212]">
-      <main className="pt-8 pb-16 px-4 ml-20 lg:ml-64 transition-all duration-150">
+      <main className="pt-8 pb-16 px-4 ml-0 lg:ml-64 transition-all duration-150">
         <div className="max-w-4xl mx-auto">
           {/* 비공개 글 메시지 */}
           <div className="flex flex-col items-center justify-center py-20 px-4">

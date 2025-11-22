@@ -3,13 +3,15 @@
 
 'use client';
 
-import { getAccessToken } from './authApi';
+import { getAccessToken, refreshToken, getRefreshToken } from './authApi';
+import { clearAuthCookies } from '@/app/utils/cookies';
+import { isTokenExpired, decodeJWT } from '@/app/utils/jwt';
 import { Post } from '@/app/types/post.types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 /**
- * 클라이언트 사이드 API 요청
+ * 클라이언트 사이드 API 요청 (자동 토큰 갱신 포함)
  */
 async function clientApiRequest<T>(endpoint: string, options?: RequestInit, requireAuth: boolean = false): Promise<T | null> {
   if (!API_BASE_URL) {
@@ -20,27 +22,110 @@ async function clientApiRequest<T>(endpoint: string, options?: RequestInit, requ
   try {
     const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
     
-    const headers: Record<string, string> = {
+    let headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options?.headers as Record<string, string> || {}),
     };
 
+    // 인증이 필요한 경우 토큰 처리
     if (requireAuth) {
-      const token = getAccessToken();
-      if (token) {
+      let token = getAccessToken();
+      const refreshTokenValue = getRefreshToken();
+      
+      // 토큰이 없거나 만료되었거나 곧 만료될 경우 refresh 시도
+      let shouldRefresh = false;
+      
+      if (!token) {
+        shouldRefresh = !!refreshTokenValue;
+      } else if (isTokenExpired(token)) {
+        shouldRefresh = !!refreshTokenValue;
+      } else {
+        // 토큰이 곧 만료될 경우 미리 갱신 (5분 전)
+        const decoded = decodeJWT(token);
+        if (decoded && decoded.exp) {
+          const expirationTime = decoded.exp * 1000;
+          const currentTime = Date.now();
+          const timeUntilExpiry = expirationTime - currentTime;
+          // 5분(300초) 이내에 만료되면 갱신
+          if (timeUntilExpiry < 5 * 60 * 1000 && refreshTokenValue) {
+            shouldRefresh = true;
+          }
+        }
+      }
+      
+      if (shouldRefresh && refreshTokenValue) {
+        try {
+          const refreshResult = await refreshToken();
+          token = refreshResult.token;
+        } catch (refreshError) {
+          // 갱신 실패 시 쿠키 삭제
+          console.error('Token refresh failed in clientApiRequest:', refreshError);
+          clearAuthCookies();
+          return null;
+        }
+      }
+      
+      if (token && !isTokenExpired(token)) {
         headers['Authorization'] = `Bearer ${token}`;
+      } else if (requireAuth) {
+        // 토큰이 없거나 만료되었고 갱신도 불가능하면 null 반환
+        return null;
       }
     }
     
-    const response = await fetch(url, {
+    let response = await fetch(url, {
       ...options,
       headers,
       credentials: 'include', // 쿠키 포함
     });
 
+    // 401 에러 시 토큰 갱신 후 재시도
+    if (response.status === 401 && requireAuth) {
+      const refreshTokenValue = getRefreshToken();
+      if (refreshTokenValue) {
+        try {
+          await refreshToken();
+          const newToken = getAccessToken();
+          if (newToken) {
+            headers['Authorization'] = `Bearer ${newToken}`;
+            // 갱신된 토큰으로 재시도
+            response = await fetch(url, {
+              ...options,
+              headers,
+              credentials: 'include',
+            });
+          }
+        } catch (refreshError) {
+          // 갱신 실패 시 쿠키 삭제
+          console.error('Token refresh failed on 401:', refreshError);
+          clearAuthCookies();
+          return null;
+        }
+      } else {
+        // refresh token도 없으면 쿠키 삭제
+        clearAuthCookies();
+        return null;
+      }
+    }
+
     if (!response.ok) {
       if (response.status === 401) {
-        // 인증 오류는 상위에서 처리
+        // 재시도 후에도 401이면 쿠키 삭제
+        clearAuthCookies();
+        return null;
+      }
+      if (response.status === 403) {
+        // 403 Forbidden: 권한 없음 (에러 메시지는 로깅하되 조용히 null 반환)
+        let errorMessage = '권한이 없습니다.';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+          console.warn(`권한 오류 (${endpoint}): ${errorMessage}`);
+        } catch {
+          // JSON 파싱 실패 시 기본 메시지 사용
+          console.warn(`권한 오류 (${endpoint}): ${errorMessage}`);
+        }
+        // 403은 권한 문제이므로 null 반환 (에러를 throw하지 않음)
         return null;
       }
       // 에러 응답 본문 읽기 시도
@@ -433,7 +518,7 @@ function transformApiPostToPost(apiPost: any): Post {
     sharedGroupIds: apiPost.sharedGroupIds || null,
     viewCount: apiPost.viewCount || 0,
     likeCount: apiPost.likeCount || 0,
-    isLiked: apiPost.isLiked || false,
+    isLiked: apiPost.isLiked === null || apiPost.isLiked === undefined ? false : Boolean(apiPost.isLiked),
     createdAt: apiPost.createdAt || '',
     updatedAt: apiPost.updatedAt || apiPost.createdAt || '',
   };

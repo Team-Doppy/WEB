@@ -147,25 +147,25 @@ export const Sidebar: React.FC = () => {
 
   return (
     <>
-      {/* 기본 사이드바 - 반응형: 작은 화면은 아이콘만, 큰 화면은 아이콘+텍스트 */}
-      <aside className="fixed left-0 top-0 h-screen w-20 lg:w-64 bg-black border-r border-white/20 flex flex-col py-4 z-50 transition-all duration-150">
+      {/* 기본 사이드바 - 데스크톱만 표시, 모바일에서는 숨김 */}
+      <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-black border-r border-white/20 flex-col py-4 z-50 transition-all duration-150">
         {/* 로고 */}
         <div className="mb-8 px-3 lg:px-4">
-          <Link 
-            href="/" 
+          <button
             onClick={(e) => {
+              e.preventDefault();
               // 검색 결과가 있으면 검색 결과 초기화
               if (searchResults) {
                 clearSearchResults();
               }
-              // 로고 클릭 시 검색이 열려있으면 검색 닫기
+              // 검색이 열려있으면 검색 닫기
               if (isSearchOpen) {
-                e.preventDefault();
                 setIsSearchOpen(false);
-                router.push('/');
               }
+              // 새로고침되면서 홈으로 이동
+              window.location.href = '/';
             }}
-            className="flex items-center justify-center lg:justify-start gap-3 px-2 lg:px-3 py-2 rounded-lg hover:bg-[#1a1a1a] transition-colors"
+            className="flex items-center justify-center lg:justify-start gap-3 px-2 lg:px-3 py-2 rounded-lg hover:bg-[#1a1a1a] transition-colors w-full"
           >
             <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
               <img 
@@ -185,7 +185,7 @@ export const Sidebar: React.FC = () => {
               />
             </div>
             <span className="text-white font-bold text-xl hidden lg:inline">Doppy</span>
-          </Link>
+          </button>
         </div>
 
         {/* 메뉴 아이템 */}
@@ -325,11 +325,23 @@ export const Sidebar: React.FC = () => {
       {/* 검색 패널 - 사이드바 오른쪽에 표시 */}
       {isSearchOpen && (
         <>
-          <aside className="fixed left-20 lg:left-64 top-0 h-screen w-[calc(100vw-5rem)] lg:w-[500px] bg-black border-r border-white/20 flex flex-col z-40 transition-all duration-150">
+          <aside className="fixed left-20 lg:left-64 top-0 h-screen w-[calc(100vw-5rem)] lg:w-[500px] bg-black border-l border-r border-white/20 flex flex-col z-40 transition-all duration-150 pb-16 lg:pb-0">
             <div className="flex-1 flex flex-col overflow-hidden">
               {/* 검색 헤더 */}
               <div className="px-6 pt-6 pb-4">
-                <h2 className="text-white font-bold text-xl mb-4 text-center">검색</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-white font-bold text-xl text-center flex-1 lg:hidden">검색</h2>
+                  <h2 className="text-white font-bold text-xl mb-4 text-center hidden lg:block flex-1">검색</h2>
+                  {/* 모바일 전용 닫기 버튼 */}
+                  <button
+                    onClick={() => setIsSearchOpen(false)}
+                    className="lg:hidden text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
                 <div className="relative">
                   <input
                     type="text"
@@ -375,10 +387,42 @@ export const Sidebar: React.FC = () => {
             </div>
           </aside>
           
-          {/* 배경 오버레이 - 사이드바는 제외 */}
+          {/* 배경 오버레이 - 모바일에서는 전체 화면, 경계선 왼쪽 바깥도 포함 */}
+          {/* 모바일: 전체 화면 오버레이 (경계선 왼쪽 바깥 포함) */}
           <div
-            className="fixed inset-0 bg-black/50 z-30 transition-all duration-150 left-20 lg:left-64"
-            onClick={() => setIsSearchOpen(false)}
+            className="lg:hidden fixed inset-0 bg-black/50 z-30 transition-all duration-150"
+            onClick={(e) => {
+              const target = e.target as HTMLElement;
+              // 검색 사이드바 내부를 클릭한 경우 무시
+              if (target.closest('aside')) {
+                return;
+              }
+              e.preventDefault();
+              e.stopPropagation();
+              setIsSearchOpen(false);
+            }}
+            onMouseDown={(e) => {
+              const target = e.target as HTMLElement;
+              // 검색 사이드바 내부를 클릭한 경우 무시
+              if (target.closest('aside')) {
+                return;
+              }
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          />
+          {/* 데스크톱: 사이드바 제외 오버레이 */}
+          <div
+            className="hidden lg:block fixed inset-0 bg-black/50 z-30 transition-all duration-150 left-64"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsSearchOpen(false);
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           />
         </>
       )}
@@ -395,7 +439,7 @@ export const Sidebar: React.FC = () => {
           }}
         >
           <div
-            className="bg-[#1a1a1a] rounded-2xl border border-white/20 shadow-2xl px-10 md:px-12 py-16 md:py-20 max-w-4xl w-full max-h-[95vh] overflow-y-auto"
+            className="bg-[#1a1a1a] rounded-2xl border border-white/20 shadow-2xl px-6 md:px-12 py-16 md:py-20 max-w-4xl w-full max-h-[95vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <LoginForm

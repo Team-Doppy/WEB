@@ -19,10 +19,10 @@ export default async function UserPage({ params }: PageProps) {
   const schema = await fetchProfileFeedSchema(validUsername);
   
   if (!schema) {
-    return (
+      return (
       <div className="min-h-screen bg-black">
-        <main className="ml-20 lg:ml-64 transition-all duration-150">
-          <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-16 pb-12 px-8">
+        <main className="ml-0 lg:ml-64 transition-all duration-150">
+          <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-16 pb-12 px-4 lg:px-8">
             <div className="text-center py-16">
               <p className="text-gray-400 text-lg">프로필을 찾을 수 없습니다.</p>
             </div>
@@ -59,8 +59,9 @@ export default async function UserPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-black">
-      <main className="ml-20 lg:ml-64 transition-all duration-150">
-        <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-16 pb-12 px-8">
+      {/* 모바일: 전체 너비 + 하단 네비게이션 패딩, 데스크톱: 사이드바 너비만큼 왼쪽 마진 */}
+      <main className="ml-0 lg:ml-64 transition-all duration-150 pb-16 lg:pb-0">
+        <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-[30px] lg:pt-16 pb-12 px-4 lg:px-8">
           {/* Profile Header */}
           <ProfileHeader
             username={profileData.username}
@@ -89,13 +90,81 @@ export default async function UserPage({ params }: PageProps) {
 }
 
 // 메타데이터 생성
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<any> {
   const { username } = await params;
   const validUsername = validateUsernameParam(username);
   
+  // 프로필 정보 가져오기
+  const schema = await fetchProfileFeedSchema(validUsername);
+  if (!schema) {
+    return {
+      title: `${validUsername} - Doppy`,
+      description: '프로필을 찾을 수 없습니다.',
+    };
+  }
+  
+  const profile = await fetchProfile(validUsername);
+  const userInfo = schema.userInfo;
+  
+  // 프로필 이미지 URL 처리 (절대 URL로 변환)
+  let profileImageUrl: string | undefined = undefined;
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}` 
+    : 'https://doppy.app';
+  
+  if (userInfo.profileImageUrl) {
+    // 이미 절대 URL인 경우
+    if (userInfo.profileImageUrl.startsWith('http://') || userInfo.profileImageUrl.startsWith('https://')) {
+      profileImageUrl = userInfo.profileImageUrl;
+    } else if (userInfo.profileImageUrl.startsWith('/')) {
+      // 상대 경로인 경우 API URL과 결합
+      profileImageUrl = apiBaseUrl ? `${apiBaseUrl}${userInfo.profileImageUrl}` : `${siteUrl}${userInfo.profileImageUrl}`;
+    } else {
+      // API URL과 결합
+      profileImageUrl = apiBaseUrl ? `${apiBaseUrl}/${userInfo.profileImageUrl}` : `${siteUrl}/${userInfo.profileImageUrl}`;
+    }
+  }
+  
+  // 별칭 또는 사용자명
+  const displayName = userInfo.alias || validUsername;
+  const description = profile?.selfIntroduction || `${displayName}님의 프로필을 확인해보세요.`;
+  const profileUrl = `${siteUrl}/profile/${validUsername}`;
+  
   return {
-    title: `${validUsername} - Doppy`,
-    description: `View ${validUsername}'s posts on Doppy`,
+    title: `${displayName} - Doppy`,
+    description,
+    openGraph: {
+      title: `${displayName} - Doppy`,
+      description,
+      url: profileUrl,
+      siteName: 'Doppy',
+      images: profileImageUrl ? [
+        {
+          url: profileImageUrl,
+          width: 400,
+          height: 400,
+          alt: `${displayName} 프로필 이미지`,
+        },
+      ] : [
+        {
+          url: `${siteUrl}/logo.png`,
+          width: 400,
+          height: 400,
+          alt: 'Doppy',
+        },
+      ],
+      type: 'profile',
+    },
+    twitter: {
+      card: 'summary',
+      title: `${displayName} - Doppy`,
+      description,
+      images: profileImageUrl ? [profileImageUrl] : [`${siteUrl}/logo.png`],
+    },
+    alternates: {
+      canonical: profileUrl,
+    },
   };
 }
 

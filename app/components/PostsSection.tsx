@@ -3,7 +3,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { PostCard } from '@/app/components/PostCard';
 import { PostGrid } from '@/app/components/PostGrid';
+import { LoginForm } from '@/app/components/LoginForm';
 import { getProfileFeedPosts } from '@/app/lib/clientApi';
+import { useAuth } from '@/app/contexts/AuthContext';
 import type { ProfileFeedSchemaResponse } from '@/app/types/feed.types';
 import type { Post } from '@/app/types/post.types';
 
@@ -19,6 +21,9 @@ export function PostsSection({ username, initialPosts, schema }: PostsSectionPro
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [showLoginMessage, setShowLoginMessage] = useState(true);
+  const { user } = useAuth();
 
   // 초기 포스트가 변경되면 상태 업데이트
   useEffect(() => {
@@ -26,6 +31,27 @@ export function PostsSection({ username, initialPosts, schema }: PostsSectionPro
     setCurrentPage(0);
     setHasMore(true);
   }, [initialPosts]);
+
+  // 스크롤 위치에 따라 로그인 메시지 표시/숨김 (스크롤을 내렸을 때만 표시)
+  useEffect(() => {
+    if (user || !posts || posts.length === 0) {
+      setShowLoginMessage(false);
+      return;
+    }
+
+    const handleScroll = () => {
+      // 스크롤을 내렸을 때(100px 이상) 메시지 표시
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      setShowLoginMessage(scrollY >= 100);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // 초기 체크
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [user, posts]);
 
   // 더보기 로드
   const loadMore = async () => {
@@ -174,16 +200,16 @@ export function PostsSection({ username, initialPosts, schema }: PostsSectionPro
         {/* 이미지뷰 버튼 */}
         <button
           onClick={() => setViewType('image')}
-          className={`flex-1 flex flex-col items-center gap-3 py-4 transition-colors relative ${
+          className={`flex-1 flex flex-col lg:flex-col items-center gap-2 lg:gap-3 py-3 lg:py-4 transition-colors relative ${
             viewType === 'image'
               ? 'text-white'
               : 'text-gray-500 hover:text-gray-300'
           }`}
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
           </svg>
-          <span className="text-xs font-medium">이미지뷰</span>
+          <span className="hidden lg:inline text-xs font-medium">이미지뷰</span>
           {viewType === 'image' && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white" />
           )}
@@ -192,16 +218,16 @@ export function PostsSection({ username, initialPosts, schema }: PostsSectionPro
         {/* 카드뷰 버튼 */}
         <button
           onClick={() => setViewType('card')}
-          className={`flex-1 flex flex-col items-center gap-3 py-4 transition-colors relative ${
+          className={`flex-1 flex flex-col lg:flex-col items-center gap-2 lg:gap-3 py-3 lg:py-4 transition-colors relative ${
             viewType === 'card'
               ? 'text-white'
               : 'text-gray-500 hover:text-gray-300'
           }`}
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
-          <span className="text-xs font-medium">카드뷰</span>
+          <span className="hidden lg:inline text-xs font-medium">카드뷰</span>
           {viewType === 'card' && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white" />
           )}
@@ -278,7 +304,36 @@ export function PostsSection({ username, initialPosts, schema }: PostsSectionPro
             )}
           </ul>
         )}
+        
+        {/* 로그인하지 않은 경우 메시지 표시 - 스크롤하면 나타남 */}
+        {!user && posts && posts.length > 0 && showLoginMessage && (
+          <div className="fixed bottom-0 lg:bottom-0 left-0 lg:left-64 right-0 pt-4 lg:pt-8 pb-20 lg:pb-11 text-center border-t border-white/10 bg-black transition-opacity duration-300 z-30">
+            <button
+              onClick={() => setIsLoginOpen(true)}
+              className="text-gray-400 hover:text-white text-sm lg:text-base transition-colors cursor-pointer px-4"
+            >
+              로그인 하고 더 많은 컨텐츠를 확인해보세요
+            </button>
+          </div>
+        )}
       </section>
+      
+      {/* 로그인 오버레이 */}
+      {isLoginOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div 
+            className="bg-[#1a1a1a] rounded-2xl border border-white/20 shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto py-16 md:py-20 px-8 md:px-12"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <LoginForm
+              onSuccess={() => {
+                setIsLoginOpen(false);
+              }}
+              onClose={() => setIsLoginOpen(false)}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }

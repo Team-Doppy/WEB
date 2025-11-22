@@ -52,3 +52,16 @@ body {
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
+
+/* 모바일에서만 세로 텍스트, 데스크톱에서는 가로 */
+[data-mobile-vertical="true"] {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+@media (min-width: 1024px) {
+  [data-mobile-vertical="true"] {
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
+  }
+}

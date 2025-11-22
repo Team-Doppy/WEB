@@ -4,6 +4,7 @@
 
 import { getCookie, setCookie, clearAuthCookies } from '@/app/utils/cookies';
 import { checkRateLimit, resetRateLimit, getRemainingAttempts, getTimeUntilReset } from '@/app/utils/rateLimit';
+import { isTokenExpired } from '@/app/utils/jwt';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -319,14 +320,29 @@ export interface MeResponse {
 }
 
 export async function getMe(): Promise<MeResponse | null> {
-  const token = getAccessToken();
+  let token = getAccessToken();
+  const refreshTokenValue = getRefreshToken();
   
-  if (!token) {
+  // 토큰이 없거나 만료된 경우 refresh token으로 갱신 시도
+  if ((!token || (token && isTokenExpired(token))) && refreshTokenValue) {
+    try {
+      const refreshResult = await refreshToken();
+      token = refreshResult.token;
+    } catch (error) {
+      // 갱신 실패 시 null 반환
+      console.error('Failed to refresh token in getMe:', error);
+      clearAuthCookies();
+      return null;
+    }
+  }
+  
+  // 토큰이 없으면 null 반환
+  if (!token || isTokenExpired(token)) {
     return null;
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/web/auth/me`, {
+    let response = await fetch(`${API_BASE_URL}/web/auth/me`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -334,9 +350,31 @@ export async function getMe(): Promise<MeResponse | null> {
       },
     });
 
+    // 401 에러 시 refresh token으로 갱신 후 재시도
+    if (response.status === 401 && refreshTokenValue) {
+      try {
+        const refreshResult = await refreshToken();
+        const newToken = refreshResult.token;
+        
+        // 갱신된 토큰으로 재시도
+        response = await fetch(`${API_BASE_URL}/web/auth/me`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${newToken}`,
+          },
+        });
+      } catch (refreshError) {
+        // 갱신 실패 시 쿠키 삭제
+        console.error('Token refresh failed in getMe:', refreshError);
+        clearAuthCookies();
+        return null;
+      }
+    }
+
     if (!response.ok) {
       if (response.status === 401) {
-        // 인증 실패 시 쿠키 삭제
+        // 재시도 후에도 401이면 쿠키 삭제
         clearAuthCookies();
         return null;
       }

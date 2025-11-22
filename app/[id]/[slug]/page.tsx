@@ -40,21 +40,22 @@ export default async function PostPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#121212]">
-      <main className="pt-16 pb-16 px-4 ml-20 lg:ml-64 transition-all duration-150">
+    <div className="min-h-screen bg-black">
+      {/* 모바일: 전체 너비 + 하단 네비게이션 패딩, 데스크톱: 사이드바 너비만큼 왼쪽 마진 */}
+      <main className="pt-2 lg:pt-16 pb-16 px-4 ml-0 lg:ml-64 transition-all duration-150">
         <div className="max-w-4xl mx-auto">
           {/* User Info Section */}
-          <Link href={`/profile/${post.author}`} className="block mb-10">
-            <div className="flex items-center gap-4 p-4 rounded-lg hover:bg-[#1a1a1a] transition-colors cursor-pointer">
+          <Link href={`/profile/${post.author}`} className="block mb-6 lg:mb-10">
+            <div className="flex items-center gap-2 lg:gap-4 p-2 lg:p-4 rounded-lg hover:bg-[#1a1a1a] transition-colors cursor-pointer">
               <ProfileImage
                 src={post.authorProfileImageUrl}
                 alt={post.author}
-                size="md"
-                className="ring-2 ring-gray-700"
+                size="sm"
+                className="w-8 h-8 lg:w-12 lg:h-12 ring-1 lg:ring-2 ring-gray-700"
               />
               <div className="flex-1">
-                <p className="text-white font-semibold">{post.author}</p>
-                <p className="text-gray-400 text-sm">
+                <p className="text-white font-semibold text-sm lg:text-base">{post.author}</p>
+                <p className="text-gray-400 text-xs lg:text-sm">
                   {formatDate(post.createdAt, 'medium')}
                 </p>
               </div>
@@ -70,7 +71,7 @@ export default async function PostPage({ params }: PageProps) {
 }
 
 // 메타데이터 생성
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<any> {
   const { id, slug } = await params;
   
   try {
@@ -86,13 +87,64 @@ export async function generateMetadata({ params }: PageProps) {
     
     const post = result as Post;
     
+    // 사이트 URL
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'https://doppy.app';
+    
+    // 썸네일 이미지 URL 처리 (절대 URL로 변환)
+    let thumbnailImageUrl: string | undefined = undefined;
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    
+    if (post.thumbnailImageUrl) {
+      // 이미 절대 URL인 경우
+      if (post.thumbnailImageUrl.startsWith('http://') || post.thumbnailImageUrl.startsWith('https://')) {
+        thumbnailImageUrl = post.thumbnailImageUrl;
+      } else if (post.thumbnailImageUrl.startsWith('/')) {
+        // 상대 경로인 경우 API URL과 결합
+        thumbnailImageUrl = apiBaseUrl ? `${apiBaseUrl}${post.thumbnailImageUrl}` : `${siteUrl}${post.thumbnailImageUrl}`;
+      } else {
+        // API URL과 결합
+        thumbnailImageUrl = apiBaseUrl ? `${apiBaseUrl}/${post.thumbnailImageUrl}` : `${siteUrl}/${post.thumbnailImageUrl}`;
+      }
+    }
+    
+    const postUrl = `${siteUrl}/${post.id}/${encodeURIComponent(createSlug(post.title))}`;
+    const description = post.summary || post.title;
+    
     return {
       title: `${post.title} - ${post.author}`,
-      description: post.summary || post.title,
+      description,
       openGraph: {
         title: post.title,
-        description: post.summary || post.title,
-        images: [post.thumbnailImageUrl],
+        description,
+        url: postUrl,
+        siteName: 'Doppy',
+        images: thumbnailImageUrl ? [
+          {
+            url: thumbnailImageUrl,
+            width: 1200,
+            height: 630,
+            alt: post.title,
+          },
+        ] : [
+          {
+            url: `${siteUrl}/logo.png`,
+            width: 1200,
+            height: 630,
+            alt: 'Doppy',
+          },
+        ],
+        type: 'article',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: post.title,
+        description,
+        images: thumbnailImageUrl ? [thumbnailImageUrl] : [`${siteUrl}/logo.png`],
+      },
+      alternates: {
+        canonical: postUrl,
       },
     };
   } catch {

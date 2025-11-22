@@ -127,11 +127,11 @@ export const HomeContent: React.FC<HomeContentProps> = ({ initialPosts }) => {
       <div>
         {displayPosts.length > 0 ? (
           <>
-            <div className="space-y-8">
-              {displayPosts.map((post) => {
+            <div className="space-y-2 lg:space-y-8">
+              {displayPosts.map((post, index) => {
                 const username = 'username' in post ? (post.username as string) : post.author;
                 return (
-                  <FeedPost key={`${username}-${post.id}`} post={post} username={username} />
+                  <FeedPost key={`${username}-${post.id}`} post={post} username={username} isFirst={index === 0} />
                 );
               })}
             </div>

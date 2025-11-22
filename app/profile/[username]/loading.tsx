@@ -1,7 +1,7 @@
 export default function Loading() {
   return (
     <div className="min-h-screen bg-black">
-      <main className="ml-20 lg:ml-64 transition-all duration-150">
+      <main className="ml-0 lg:ml-64 transition-all duration-150">
         <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-16 pb-12 px-8">
           {/* Profile Header 스켈레톤 */}
           <div className="mb-16 pb-10 border-b border-white/10 px-6 md:px-8">

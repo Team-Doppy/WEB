@@ -1,9 +1,30 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { login as loginApi, logout as logoutApi, refreshToken, isAuthenticated, getAccessToken, getMe, MeResponse } from '@/app/lib/authApi';
+import { login as loginApi, logout as logoutApi, refreshToken, isAuthenticated, getAccessToken, getMe, MeResponse, getRefreshToken } from '@/app/lib/authApi';
 import { LoginRequest, LoginResponse } from '@/app/lib/authApi';
 import { decodeJWT, getUsernameFromToken, isTokenExpired } from '@/app/utils/jwt';
+
+/**
+ * 토큰이 곧 만료될지 확인 (5분 전)
+ */
+function shouldRefreshToken(token: string): boolean {
+  if (isTokenExpired(token)) {
+    return true;
+  }
+  
+  const decoded = decodeJWT(token);
+  if (!decoded || !decoded.exp) {
+    return true;
+  }
+  
+  const expirationTime = decoded.exp * 1000;
+  const currentTime = Date.now();
+  const timeUntilExpiry = expirationTime - currentTime;
+  
+  // 5분(300초) 이내에 만료되면 true
+  return timeUntilExpiry < 5 * 60 * 1000;
+}
 
 // getUsernameFromToken을 import했으므로 사용 가능
 
@@ -51,46 +72,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 초기 인증 상태 확인
   useEffect(() => {
     const checkAuth = async () => {
-      const token = getAccessToken();
-      
-      if (token) {
-        try {
-          // 토큰 만료 확인
-          if (isTokenExpired(token)) {
-            // 만료된 토큰이면 갱신 시도
-            try {
-              await refreshToken();
-              // 갱신 후 사용자 정보 가져오기
-              const userInfo = await fetchUserInfo();
-              if (userInfo) {
-                setUser(userInfo);
-              } else {
-                // getMe 실패 시 토큰에서 기본 정보 추출
-                const newToken = getAccessToken();
-                const username = newToken ? getUsernameFromToken(newToken) : null;
-                const decoded = newToken ? decodeJWT(newToken) : null;
-                if (username) {
-                  setUser({
-                    username,
-                    profileImageUrl: null,
-                    region: decoded?.region || 'KR',
-                  });
-                } else {
-                  setUser(null);
-                }
-              }
-            } catch (error) {
-              // 갱신 실패 시 로그아웃 상태로 설정
-              console.error('Token refresh failed:', error);
-              setUser(null);
-            }
-          } else {
-            // 유효한 토큰이면 사용자 정보 가져오기
+      try {
+        let token = getAccessToken();
+        const refreshTokenValue = getRefreshToken();
+        
+        // 토큰이 없거나 만료되었거나 곧 만료될 경우 refresh token으로 갱신 시도
+        if ((!token || (token && shouldRefreshToken(token))) && refreshTokenValue) {
+          try {
+            await refreshToken();
+            token = getAccessToken();
+          } catch (error) {
+            // 갱신 실패 시 로그아웃 상태로 설정
+            console.error('Token refresh failed:', error);
+            setUser(null);
+            setIsLoading(false);
+            return;
+          }
+        }
+        
+        // 토큰이 있고 유효하면 사용자 정보 가져오기
+        if (token && !isTokenExpired(token)) {
+          try {
             const userInfo = await fetchUserInfo();
             if (userInfo) {
               setUser(userInfo);
             } else {
-              // getMe 실패 시 토큰에서 기본 정보 추출
+              // getMe 실패 시 토큰에서 기본 정보 추출 (fallback)
               const username = getUsernameFromToken(token);
               const decoded = decodeJWT(token);
               if (username) {
@@ -103,27 +110,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(null);
               }
             }
+          } catch (error) {
+            console.error('Failed to fetch user info:', error);
+            // 에러 발생 시에도 토큰에서 기본 정보 추출
+            const username = getUsernameFromToken(token);
+            const decoded = decodeJWT(token);
+            if (username) {
+              setUser({
+                username,
+                profileImageUrl: null,
+                region: decoded?.region || 'KR',
+              });
+            } else {
+              setUser(null);
+            }
           }
-        } catch (error) {
-          console.error('Auth check failed:', error);
-          // 에러 발생 시에도 토큰이 있으면 기본 정보라도 유지
-          const username = getUsernameFromToken(token);
-          const decoded = decodeJWT(token);
-          if (username) {
-            setUser({
-              username,
-              profileImageUrl: null,
-              region: decoded?.region || 'KR',
-            });
-          } else {
-            setUser(null);
-          }
+        } else {
+          // 토큰이 없거나 유효하지 않음
+          setUser(null);
         }
-      } else {
+      } catch (error) {
+        console.error('Auth check failed:', error);
         setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
 
     checkAuth();

@@ -53,7 +53,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, username, isProfile = 
   const postSlug = createPostSlug(post.title, post.id);
   const postUrl = `/${post.id}/${postSlug}`;
   
-  const [isLiked, setIsLiked] = useState(post.isLiked);
+  const [isLiked, setIsLiked] = useState(post.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [isLiking, setIsLiking] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -81,12 +81,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post, username, isProfile = 
     setIsLiking(true);
     const previousIsLiked = isLiked;
     const previousLikeCount = likeCount;
+    const newIsLiked = !isLiked;
 
     // 낙관적 업데이트
-    setIsLiked(!isLiked);
+    setIsLiked(newIsLiked);
     setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
 
     try {
+      // 토글 전 상태(isLiked)를 전달하여 서버에서 반대 상태로 변경
       const result = await toggleLike(post.id, isLiked);
       if (result) {
         setIsLiked(result.isLiked);
@@ -281,16 +283,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, username, isProfile = 
             className="bg-[#1a1a1a] rounded-2xl border border-white/20 shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto py-16 md:py-20 px-8 md:px-12"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={() => setIsLoginOpen(false)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
             <LoginForm
               onSuccess={() => {
                 setIsLoginOpen(false);

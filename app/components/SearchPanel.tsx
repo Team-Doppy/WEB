@@ -197,7 +197,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ searchQuery, onSearchQ
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* 검색 결과 또는 실시간 검색어 */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto px-6 py-4 pb-20 lg:pb-4">
         {searchQuery ? (
           <>
             {isSearchingPosts ? (

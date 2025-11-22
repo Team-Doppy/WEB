@@ -144,8 +144,8 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
 
   return (
     <div className="relative">
-      {/* Placeholder - 크기 확보 */}
-      <div className="absolute inset-0 bg-[#121212] -z-10">
+      {/* Placeholder - 크기 확보 (검정 배경) */}
+      <div className="absolute inset-0 bg-black -z-10">
         {node.isTitle && <div className="h-32"></div>}
         {!node.isTitle && node.text && <div className="min-h-8"></div>}
         {!node.text && <div className="h-6"></div>}
@@ -155,28 +155,28 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
       <div className="relative transition-opacity duration-500 opacity-0 animate-fade-in">
         {/* 제목 블록이면 작성자 정보 먼저 표시 */}
         {node.isTitle && authorInfo && (
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex items-center gap-2 lg:gap-4 mb-4 lg:mb-6">
             <img
               src={authorInfo.authorProfileImageUrl}
               alt={authorInfo.author}
-              className="w-16 h-16 rounded-full ring-2 ring-white/30"
+              className="w-8 h-8 lg:w-12 lg:h-12 rounded-full ring-1 lg:ring-2 ring-white/30"
             />
             <div>
-              <p className="font-semibold text-xl text-white">{authorInfo.author}</p>
-              <time className="text-base text-gray-400">
+              <p className="font-semibold text-sm lg:text-xl text-white">{authorInfo.author}</p>
+              <time className="text-xs lg:text-base text-gray-400">
                 {formatDate(authorInfo.createdAt, 'medium')}
               </time>
             </div>
           </div>
         )}
 
-        <div className={`${node.isTitle ? 'flex items-center gap-4 mb-6' : ''}`}>
+        <div className={`${node.isTitle ? 'flex items-center gap-4 mb-6 bg-black' : ''}`}>
           <p
             ref={textRef}
             className={`${
               node.isTitle
-                ? 'text-6xl font-bold text-white'
-                : 'text-2xl leading-relaxed mb-2 text-white'
+                ? 'text-2xl lg:text-4xl xl:text-6xl font-bold text-white bg-black'
+                : 'text-base lg:text-2xl leading-relaxed mb-2 text-white'
             } ${alignClass} relative whitespace-pre-wrap ${node.isTitle ? 'flex-shrink-0' : ''}`}
           >
         {segments.map((segment, index) => {
@@ -234,8 +234,8 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
 
           {/* 제목 옆에 뷰카운트 */}
           {node.isTitle && viewCount !== undefined && (
-            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-white/10 backdrop-blur-sm flex-shrink-0">
-              <span className="text-white font-semibold text-sm">
+            <div className="flex items-center justify-center w-8 h-8 lg:w-14 lg:h-14 rounded-full bg-white/10 backdrop-blur-sm flex-shrink-0">
+              <span className="text-white font-semibold text-xs lg:text-sm">
                 {formatNumber(viewCount)}
               </span>
             </div>

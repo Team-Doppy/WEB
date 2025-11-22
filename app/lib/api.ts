@@ -204,7 +204,7 @@ function transformApiPostToPost(apiPost: any): Post {
     sharedGroupIds: apiPost.sharedGroupIds || null,
     viewCount: apiPost.viewCount || 0,
     likeCount: apiPost.likeCount || 0,
-    isLiked: apiPost.isLiked || false,
+    isLiked: apiPost.isLiked === null || apiPost.isLiked === undefined ? false : Boolean(apiPost.isLiked),
     createdAt: apiPost.createdAt || '',
     updatedAt: apiPost.updatedAt || apiPost.createdAt || '',
   };
@@ -258,7 +258,7 @@ export async function getPublicProfileFeedPosts(
   hasNext: boolean;
   hasPrevious: boolean;
 }> {
-  const url = `/web/api/profile/${username}/feed/posts/public?page=${page}&size=${size}`;
+  const url = `/web/api/profile/${username}/feed/posts?page=${page}&size=${size}`;
   console.log('[getPublicProfileFeedPosts] API 요청:', { username, page, size, url });
   
   const response = await apiRequest<{
@@ -271,7 +271,7 @@ export async function getPublicProfileFeedPosts(
       hasNext: boolean;
       hasPrevious: boolean;
     };
-  }>(url, undefined, false); // 인증 불필요
+  }>(url, undefined, false); // 인증 불필요 (서버가 자동으로 공개 포스트만 반환)
   
   console.log('[getPublicProfileFeedPosts] API 응답:', { 
     hasResponse: !!response, 

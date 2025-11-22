@@ -11,7 +11,7 @@ export const MentionBlock: React.FC<MentionBlockProps> = ({ node }) => {
   return (
     <div className="my-3 relative">
       {/* Placeholder - 크기 확보 */}
-      <div className="h-10 bg-[#121212] absolute inset-0"></div>
+      <div className="h-10 bg-black absolute inset-0"></div>
       
       {/* 실제 콘텐츠 - fade-in 효과 */}
       <div className="relative flex flex-wrap gap-3 transition-opacity duration-500 opacity-0 animate-fade-in">

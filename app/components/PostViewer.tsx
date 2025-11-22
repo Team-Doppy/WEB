@@ -14,7 +14,7 @@ export const PostViewer: React.FC<PostViewerProps> = ({ post }) => {
   if (showContent) {
     return (
       <main className="min-h-screen bg-black">
-        <div className="ml-20">
+        <div className="ml-0 lg:ml-64">
           <div className="max-w-4xl mx-auto py-12 px-4">
             <ReadOnlyEditor post={post} />
           </div>
@@ -25,7 +25,7 @@ export const PostViewer: React.FC<PostViewerProps> = ({ post }) => {
 
   // 초기 화면: 썸네일 배경 + 고급스러운 UI
   return (
-    <main className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
+    <main className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="w-full max-w-6xl">
         <div className="relative rounded-3xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
           {/* 배경 이미지 전체 */}
