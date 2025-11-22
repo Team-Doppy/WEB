@@ -127,7 +127,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({ initialPosts }) => {
       <div>
         {displayPosts.length > 0 ? (
           <>
-            <div className="space-y-2 lg:space-y-8">
+            <div className="space-y-4 lg:space-y-12">
               {displayPosts.map((post, index) => {
                 const username = 'username' in post ? (post.username as string) : post.author;
                 return (

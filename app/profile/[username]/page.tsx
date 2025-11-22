@@ -109,24 +109,34 @@ export async function generateMetadata({ params }: PageProps): Promise<any> {
   // 프로필 이미지 URL 처리 (절대 URL로 변환)
   // userInfo와 profile 둘 다 확인
   const rawProfileImageUrl = userInfo.profileImageUrl || profile?.profileImageUrl || null;
-  let profileImageUrl: string | undefined = undefined;
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL 
+  
+  // 환경 변수 확인
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || '';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || (process.env.VERCEL_URL 
     ? `https://${process.env.VERCEL_URL}` 
     : 'https://doppy.app');
   
-  if (rawProfileImageUrl && rawProfileImageUrl.trim() !== '' && rawProfileImageUrl !== 'null') {
+  let profileImageUrl: string;
+  
+  if (rawProfileImageUrl && 
+      typeof rawProfileImageUrl === 'string' && 
+      rawProfileImageUrl.trim() !== '' && 
+      rawProfileImageUrl !== 'null' && 
+      rawProfileImageUrl !== 'undefined') {
     const trimmedUrl = rawProfileImageUrl.trim();
-    // 이미 절대 URL인 경우
+    // 이미 절대 URL인 경우 그대로 사용
     if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
       profileImageUrl = trimmedUrl;
     } else if (trimmedUrl.startsWith('/')) {
-      // 상대 경로인 경우 API URL과 결합
+      // 상대 경로인 경우 API URL과 결합 (API 서버가 이미지를 제공하는 경우)
       profileImageUrl = apiBaseUrl ? `${apiBaseUrl}${trimmedUrl}` : `${siteUrl}${trimmedUrl}`;
     } else {
-      // API URL과 결합
+      // 경로가 '/'로 시작하지 않으면 API URL과 결합
       profileImageUrl = apiBaseUrl ? `${apiBaseUrl}/${trimmedUrl}` : `${siteUrl}/${trimmedUrl}`;
     }
+  } else {
+    // 프로필 이미지가 없으면 기본 로고 사용
+    profileImageUrl = `${siteUrl}/logo.png`;
   }
   
   // 별칭 또는 사용자명
@@ -142,28 +152,21 @@ export async function generateMetadata({ params }: PageProps): Promise<any> {
       description,
       url: profileUrl,
       siteName: 'Doppy',
-      images: profileImageUrl ? [
+      images: [
         {
           url: profileImageUrl,
           width: 1200,
           height: 1200,
           alt: `${displayName} 프로필 이미지`,
         },
-      ] : [
-        {
-          url: `${siteUrl}/logo.png`,
-          width: 1200,
-          height: 630,
-          alt: 'Doppy',
-        },
       ],
       type: 'profile',
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title: `${displayName} - Doppy`,
       description,
-      images: profileImageUrl ? [profileImageUrl] : [`${siteUrl}/logo.png`],
+      images: [profileImageUrl],
     },
     alternates: {
       canonical: profileUrl,

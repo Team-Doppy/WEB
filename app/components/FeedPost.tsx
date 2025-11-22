@@ -164,7 +164,7 @@ export const FeedPost: React.FC<FeedPostProps> = ({ post, username, isFirst = fa
 
   return (
     <article 
-      className={`mb-2 lg:mb-12 pb-2 lg:pb-12 cursor-pointer relative bg-black ${isFirst ? 'pt-4 lg:pt-0' : ''}`}
+      className={`mb-4 lg:mb-16 pb-4 lg:pb-16 cursor-pointer relative bg-black ${isFirst ? 'pt-4 lg:pt-0' : ''}`}
       onClick={handlePostClick}
     >
       {/* 작성자 정보 */}
