@@ -141,17 +141,23 @@ export async function generateMetadata({ params }: PageProps): Promise<any> {
   
   // 별칭 또는 사용자명
   const displayName = userInfo.alias || validUsername;
+  // 설명 텍스트 (카카오톡 링크 프리뷰에 표시됨)
   const description = `${validUsername}님의 프로필을 확인해보세요.`;
   const profileUrl = `${siteUrl}/profile/${validUsername}`;
   
+  // 메타데이터 반환 (다양한 플랫폼 지원)
   return {
+    metadataBase: new URL(siteUrl),
     title: `${displayName} - Doppy`,
     description,
+    // Open Graph (Facebook, LinkedIn, 카카오톡 등)
     openGraph: {
       title: `${displayName} - Doppy`,
       description,
       url: profileUrl,
       siteName: 'Doppy',
+      locale: 'ko_KR',
+      type: 'profile',
       images: [
         {
           url: profileImageUrl,
@@ -160,14 +166,15 @@ export async function generateMetadata({ params }: PageProps): Promise<any> {
           alt: `${displayName} 프로필 이미지`,
         },
       ],
-      type: 'profile',
     },
+    // Twitter Card
     twitter: {
       card: 'summary_large_image',
       title: `${displayName} - Doppy`,
       description,
       images: [profileImageUrl],
     },
+    // Canonical URL
     alternates: {
       canonical: profileUrl,
     },
