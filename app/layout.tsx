@@ -47,6 +47,10 @@ export const metadata: Metadata = {
     description: "모두 다 같은 친구는 아니니까",
     images: ["/logo.png"],
   },
+  other: {
+    'apple-itunes-app': 'app-id=6755365538, app-argument=https://doppy.app',
+    'google-play-app': 'app-id=com.doppy.app',
+  },
 };
 
 export default function RootLayout({

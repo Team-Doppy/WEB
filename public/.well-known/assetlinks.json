@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.doppy.app",
+      "sha256_cert_fingerprints": [
+        "1F:2E:C9:26:AA:75:99:BD:D9:81:AF:8D:6E:2A:35:71:45:E5:CF:86"
+      ]
+    }
+  }
+]
+
