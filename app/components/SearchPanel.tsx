@@ -274,18 +274,18 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ searchQuery, onSearchQ
                       <div
                         key={user.id}
                         onClick={() => handleUserClick(user.username)}
-                        className="p-3 rounded-lg hover:bg-[#1a1a1a] cursor-pointer transition-colors"
+                        className="p-4 rounded-lg hover:bg-[#1a1a1a] cursor-pointer transition-colors"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                           <ProfileImage
                             src={user.profileImageUrl || undefined}
                             alt={user.username}
-                            size="md"
-                            className="w-10 h-10"
+                            size="lg"
+                            className="w-14 h-14"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="text-white font-medium text-sm">{user.alias || user.username}</p>
-                            <p className="text-gray-400 text-xs">@{user.username}</p>
+                            <p className="text-white font-semibold text-base mb-0.5">{user.alias || user.username}</p>
+                            <p className="text-gray-400 text-sm font-medium">@{user.username}</p>
                           </div>
                         </div>
                       </div>

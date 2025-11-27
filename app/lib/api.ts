@@ -221,6 +221,7 @@ function transformApiPostToPost(apiPost: any): Post {
     sharedGroupIds: apiPost.sharedGroupIds || null,
     viewCount: apiPost.viewCount || 0,
     likeCount: apiPost.likeCount || 0,
+    commentCount: apiPost.commentCount ?? 0,
     isLiked: apiPost.isLiked === null || apiPost.isLiked === undefined ? false : Boolean(apiPost.isLiked),
     createdAt: apiPost.createdAt || '',
     updatedAt: apiPost.updatedAt || apiPost.createdAt || '',

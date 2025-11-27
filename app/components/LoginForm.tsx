@@ -83,7 +83,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             {/* App Store 다운로드 버튼 */}
             <div className="flex flex-col items-center">
               <a 
-                href="https://apps.apple.com" 
+                href={process.env.NEXT_PUBLIC_APP_STORE_URL || "https://apps.apple.com/kr/app/doppy/id6755365538"} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-block"
@@ -96,7 +96,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             {/* Google Play 다운로드 버튼 */}
             <div className="flex flex-col items-center -mt-2">
               <a 
-                href="https://play.google.com/store" 
+                href={process.env.NEXT_PUBLIC_GOOGLE_PLAY_URL || "https://play.google.com/store/apps/details?id=com.doppy.app"} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-block"
@@ -117,16 +117,25 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <div className="relative">
             <input
               id="username"
-              name="username-field"
+              name="username"
               type="text"
               value={username}
               onChange={(e) => {
                 const value = e.target.value;
-                // 입력값 검증: 영문, 숫자, 언더스코어, 하이픈만 허용
-                if (/^[a-zA-Z0-9_-]*$/.test(value)) {
-                  setUsername(value);
-                  setError(null);
+                // 입력값 검증: 영문, 숫자, 언더스코어, 하이픈만 허용, 최대 20자
+                const filteredValue = value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20);
+                setUsername(filteredValue);
+                setError(null);
+              }}
+              onInput={(e) => {
+                // onInput도 동일하게 처리하여 즉각적인 반응 보장
+                const value = e.currentTarget.value;
+                const filteredValue = value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20);
+                if (filteredValue !== value) {
+                  e.currentTarget.value = filteredValue;
                 }
+                setUsername(filteredValue);
+                setError(null);
               }}
               className="w-full px-4 py-3.5 bg-[#1a1a1a] text-white text-base rounded-xl border border-white/20 focus:outline-none focus:border-white/40 transition-all placeholder:text-gray-500"
               placeholder="사용자명을 입력하세요"
@@ -135,7 +144,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               maxLength={20}
               pattern="^[a-zA-Z0-9_-]+$"
               disabled={isLoading}
-              autoComplete="off"
+              autoComplete="username"
               data-lpignore="true"
               data-1p-ignore="true"
             />
@@ -216,7 +225,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              처리 중...
+              로그인
             </span>
           ) : (
             '로그인'

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useSearch } from '@/app/contexts/SearchContext';
 import { ProfileImage } from './ProfileImage';
@@ -10,7 +10,8 @@ import { LoginForm } from './LoginForm';
 
 export const MobileNav: React.FC = () => {
   const pathname = usePathname();
-  const { isAuthenticated, user } = useAuth();
+  const router = useRouter();
+  const { isAuthenticated, user, logout } = useAuth();
   const { clearSearchResults, searchResults } = useSearch();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
@@ -100,22 +101,42 @@ export const MobileNav: React.FC = () => {
         
         {/* 프로필 */}
         {isAuthenticated && user ? (
-          <Link
-            href={`/profile/${user.username}`}
-            className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-              pathname?.startsWith(`/profile/${user.username}`)
-                ? 'text-white'
-                : 'text-gray-400'
-            }`}
-          >
-            <ProfileImage
-              src={user.profileImageUrl || undefined}
-              alt={user.username}
-              size="sm"
-              className="w-6 h-6"
-            />
-            <span className="text-xs mt-1">프로필</span>
-          </Link>
+          <>
+            <Link
+              href={`/profile/${user.username}`}
+              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+                pathname?.startsWith(`/profile/${user.username}`)
+                  ? 'text-white'
+                  : 'text-gray-400'
+              }`}
+            >
+              <ProfileImage
+                src={user.profileImageUrl || undefined}
+                alt={user.username}
+                size="sm"
+                className="w-6 h-6"
+              />
+              <span className="text-xs mt-1">프로필</span>
+            </Link>
+            {/* 로그아웃 버튼 */}
+            <button
+              onClick={async () => {
+                try {
+                  await logout();
+                  router.push('/');
+                } catch (error) {
+                  console.error('Logout failed:', error);
+                }
+              }}
+              className="flex flex-col items-center justify-center flex-1 h-full text-gray-400 hover:text-white transition-colors"
+              title="로그아웃"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span className="text-xs mt-1">로그아웃</span>
+            </button>
+          </>
         ) : (
           <button
             onClick={() => setIsLoginOpen(true)}

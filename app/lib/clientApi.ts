@@ -309,7 +309,7 @@ export async function searchUsers(username: string): Promise<UserSearchResult[]>
   }>(
     `/web/api/friends/search?username=${encodeURIComponent(username)}`,
     undefined,
-    true
+    false
   );
 
   if (!response) return [];
@@ -544,6 +544,7 @@ function transformApiPostToPost(apiPost: any): Post {
     sharedGroupIds: apiPost.sharedGroupIds || null,
     viewCount: apiPost.viewCount || 0,
     likeCount: apiPost.likeCount || 0,
+    commentCount: apiPost.commentCount ?? 0,
     isLiked: apiPost.isLiked === null || apiPost.isLiked === undefined ? false : Boolean(apiPost.isLiked),
     createdAt: apiPost.createdAt || '',
     updatedAt: apiPost.updatedAt || apiPost.createdAt || '',
@@ -574,7 +575,7 @@ export async function semanticSearch(
   } | PaginatedResponse<any>>(
     `/web/api/search/semantic?${params.toString()}`,
     undefined,
-    true // 토큰이 있으면 포함
+    false // 인증 없이 검색 가능
   );
 
   if (!response) {

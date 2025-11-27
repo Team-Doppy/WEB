@@ -215,7 +215,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               )}
               
               {/* 데스크톱: 팔로우/프로필 편집 버튼 - 고정 너비 */}
-              <div className="w-[400px]">
+              <div className={`w-[500px] ${links.length > 2 ? 'mt-4' : ''}`}>
                 {!isOwnProfile ? (
                   <button
                     onClick={handleFollow}
@@ -252,7 +252,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           {links.length > 2 && (
             <button
               onClick={() => setIsLinksExpanded(!isLinksExpanded)}
-              className="flex-1 py-2.5 px-6 rounded-xl text-sm font-semibold bg-white/10 text-white hover:bg-white/15 transition-all border border-white/20 flex items-center justify-center gap-1"
+              className="flex-1 py-2.5 px-6 rounded-xl text-xs font-semibold bg-white/10 text-white hover:bg-white/15 transition-all flex items-center justify-center gap-1"
             >
               {isLinksExpanded ? (
                 <>
@@ -263,7 +263,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 </>
               ) : (
                 <>
-                  <span>확장</span>
+                  <span>펼치기</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -274,7 +274,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           {isOwnProfile && (
             <button 
               onClick={() => setIsEditModalOpen(true)}
-              className={`${links.length > 2 ? 'flex-1' : 'flex-1'} py-2.5 px-6 rounded-xl text-sm font-semibold bg-white/10 text-white hover:bg-white/15 transition-all border border-white/20`}
+              className={`${links.length > 2 ? 'flex-1' : 'flex-1'} py-2.5 px-6 rounded-xl text-xs font-semibold bg-white/10 text-white hover:bg-white/15 transition-all`}
             >
               프로필 편집
             </button>
@@ -283,9 +283,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             <button
               onClick={handleFollow}
               disabled={isFollowingLoading}
-              className={`${links.length > 2 ? 'flex-1' : 'flex-1'} py-2.5 px-6 rounded-xl text-sm font-semibold transition-all ${
+              className={`${links.length > 2 ? 'flex-1' : 'flex-1'} py-2.5 px-6 rounded-xl text-xs font-semibold transition-all ${
                 friendStatus?.status === 'ACCEPTED' || friendStatus?.status === 'REQUESTED'
-                  ? 'bg-white/10 text-white hover:bg-white/15 border border-white/20'
+                  ? 'bg-white/10 text-white hover:bg-white/15'
                   : 'bg-white text-black hover:bg-gray-100'
               } ${isFollowingLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >

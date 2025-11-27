@@ -7,6 +7,8 @@ import { ImageBlock } from './blocks/ImageBlock';
 import { VideoBlock } from './blocks/VideoBlock';
 import { MentionBlock } from './blocks/MentionBlock';
 import { ImageRowBlock } from './blocks/ImageRowBlock';
+import { LinkBlock } from './blocks/LinkBlock';
+import { DividerBlock } from './blocks/DividerBlock';
 
 interface BlockRendererProps {
   node: ContentNode;
@@ -30,6 +32,10 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ node, authorInfo, 
       return <MentionBlock node={node} />;
     case 'imageRow':
       return <ImageRowBlock node={node} />;
+    case 'link':
+      return <LinkBlock node={node} />;
+    case 'divider':
+      return <DividerBlock node={node} />;
     default:
       return null;
   }

@@ -1,3 +1,6 @@
+/* Google Fonts 로드 - @import는 모든 규칙보다 앞에 와야 함 */
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&family=Dokdo&family=Black+Han+Sans&display=swap');
+
 @import "tailwindcss";
 
 :root {

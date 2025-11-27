@@ -12,6 +12,7 @@ export interface Post {
   sharedGroupIds: string[] | null;
   viewCount: number;
   likeCount: number;
+  commentCount?: number;
   isLiked: boolean;
   createdAt: string;
   updatedAt: string;
@@ -27,7 +28,9 @@ export type ContentNode =
   | ImageNode
   | VideoNode
   | MentionNode
-  | ImageRowNode;
+  | ImageRowNode
+  | LinkNode
+  | DividerNode;
 
 // 문단 노드
 export interface ParagraphNode {
@@ -36,6 +39,8 @@ export interface ParagraphNode {
   text: string;
   spans: TextSpan[];
   isTitle?: boolean;
+  fontFamily?: string;
+  align?: 'left' | 'center' | 'right';
   metadata?: {
     textAlign?: 'left' | 'center' | 'right';
   };
@@ -79,6 +84,23 @@ export interface MentionNode {
   id: string;
   type: 'mention';
   usernames: string[];
+  align?: 'left' | 'center' | 'right';
+}
+
+// 링크 노드
+export interface LinkNode {
+  id: string;
+  type: 'link';
+  url: string;
+  title?: string;
+  description?: string;
+  thumbnailUrl?: string;
+}
+
+// 디바이더 노드
+export interface DividerNode {
+  id: string;
+  type: 'divider';
 }
 
 // 텍스트 스타일링
@@ -87,11 +109,14 @@ export interface TextSpan {
   end: number;
   attrs: {
     font_size?: number;
+    fontFamily?: string;
+    color?: string;
     spoiler?: boolean;
     highlight?: string;
     bold?: boolean;
     italic?: boolean;
     underline?: boolean;
+    strikethrough?: boolean;
   };
 }
 
@@ -110,6 +135,9 @@ export interface Sticker {
   content: {
     strokes?: Stroke[]; // 벡터 드로잉용 (옵션)
     imageUrl?: string; // PNG 이미지용 (옵션)
+    url?: string; // 이미지 URL (imageUrl 대체)
+    width?: number;
+    height?: number;
   };
   opacity: number;
   rotation: number;

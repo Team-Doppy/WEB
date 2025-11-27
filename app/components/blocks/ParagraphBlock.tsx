@@ -19,8 +19,14 @@ interface ParagraphBlockProps {
 interface TextSegment {
   text: string;
   fontSize?: number;
+  fontFamily?: string;
+  color?: string;
   spoiler?: boolean;
   highlight?: string;
+  bold?: boolean;
+  italic?: boolean;
+  strikethrough?: boolean;
+  underline?: boolean;
   spanIndex?: number; 
 }
 
@@ -54,11 +60,28 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
     const char = node.text[i];
     const styles = styleMap.get(i) || {};
     
-    const segmentKey = JSON.stringify(styles);
+    const segmentKey = JSON.stringify({
+      fontSize: styles.font_size,
+      fontFamily: styles.fontFamily,
+      color: styles.color,
+      spoiler: styles.spoiler,
+      highlight: styles.highlight,
+      bold: styles.bold,
+      italic: styles.italic,
+      strikethrough: styles.strikethrough,
+      underline: styles.underline,
+      spanIndex: styles.spanIndex,
+    });
     const prevKey = currentSegment ? JSON.stringify({
       fontSize: currentSegment.fontSize,
+      fontFamily: currentSegment.fontFamily,
+      color: currentSegment.color,
       spoiler: currentSegment.spoiler,
       highlight: currentSegment.highlight,
+      bold: currentSegment.bold,
+      italic: currentSegment.italic,
+      strikethrough: currentSegment.strikethrough,
+      underline: currentSegment.underline,
       spanIndex: currentSegment.spanIndex,
     }) : null;
 
@@ -69,8 +92,14 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
       currentSegment = {
         text: char,
         fontSize: styles.font_size,
+        fontFamily: styles.fontFamily || node.fontFamily,
+        color: styles.color,
         spoiler: styles.spoiler,
         highlight: styles.highlight,
+        bold: styles.bold,
+        italic: styles.italic,
+        strikethrough: styles.strikethrough,
+        underline: styles.underline,
         spanIndex: styles.spanIndex,
       };
     } else {
@@ -135,8 +164,8 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
     return () => clearTimeout(timer);
   }, [node.text, node.spans, hasSpoiler, isRevealed]);
 
-  // 정렬 처리
-  const textAlign = node.metadata?.textAlign || 'left';
+  // 정렬 처리: align 속성이 우선, 없으면 metadata.textAlign, 둘 다 없으면 center (가운데 정렬)
+  const textAlign = node.align || node.metadata?.textAlign || 'center';
   const alignClass = 
     textAlign === 'center' ? 'text-center' :
     textAlign === 'right' ? 'text-right' :
@@ -155,7 +184,11 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
       <div className="relative transition-opacity duration-500 opacity-0 animate-fade-in">
         {/* 제목 블록이면 작성자 정보 먼저 표시 */}
         {node.isTitle && authorInfo && (
-          <div className="flex items-center gap-2 lg:gap-4 mb-4 lg:mb-6">
+          <div className={`flex items-center gap-2 lg:gap-4 mb-4 lg:mb-6 ${
+            alignClass === 'text-center' ? 'justify-center' :
+            alignClass === 'text-right' ? 'justify-end' :
+            'justify-start'
+          }`}>
             <img
               src={authorInfo.authorProfileImageUrl}
               alt={authorInfo.author}
@@ -170,19 +203,47 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
           </div>
         )}
 
-        <div className={`${node.isTitle ? 'flex items-center gap-4 mb-6 bg-black' : ''}`}>
-          <p
-            ref={textRef}
-            className={`${
-              node.isTitle
-                ? 'text-2xl lg:text-4xl xl:text-6xl font-bold text-white bg-black'
-                : 'text-base lg:text-2xl leading-relaxed mb-2 text-white'
-            } ${alignClass} relative whitespace-pre-wrap ${node.isTitle ? 'flex-shrink-0' : ''}`}
-          >
-        {segments.map((segment, index) => {
+        <div className={`${node.isTitle ? `${alignClass === 'text-center' ? 'flex flex-col items-center' : alignClass === 'text-right' ? 'flex flex-col items-end' : 'flex flex-col items-start'} mb-12 lg:mb-16 bg-black` : ''}`}>
+          <div className={`${node.isTitle ? `flex items-center gap-3 ${alignClass === 'text-center' ? 'justify-center' : alignClass === 'text-right' ? 'justify-end' : 'justify-start'}` : ''}`}>
+            <p
+              ref={textRef}
+              className={`${
+                node.isTitle
+                  ? 'text-2xl lg:text-4xl xl:text-6xl font-bold text-white bg-black'
+                  : 'leading-tight mb-2 text-white text-[16px] lg:text-[21px]'
+              } ${alignClass} relative whitespace-pre-wrap ${node.isTitle ? 'flex-shrink-0' : ''}`}
+            >
+          {segments.map((segment, index) => {
           const style: React.CSSProperties = {};
           if (segment.fontSize) {
             style.fontSize = `${segment.fontSize}px`;
+          }
+          if (segment.fontFamily) {
+            // 폰트 이름에 공백이 있으면 따옴표로 감싸기
+            style.fontFamily = segment.fontFamily.includes(' ') 
+              ? `"${segment.fontFamily}", sans-serif`
+              : `${segment.fontFamily}, sans-serif`;
+          }
+          // color가 있으면 명시적으로 설정 (부모의 text-white보다 우선순위 높음)
+          if (segment.color) {
+            style.color = segment.color;
+          } else {
+            // color가 없으면 기본 연한 흰색 설정
+            style.color = '#e5e5e5';
+          }
+          
+          const classNames: string[] = [];
+          if (segment.bold) {
+            classNames.push('font-bold');
+          }
+          if (segment.italic) {
+            classNames.push('italic');
+          }
+          if (segment.strikethrough) {
+            classNames.push('line-through');
+          }
+          if (segment.underline) {
+            classNames.push('underline');
           }
 
           // 형광펜만 있는 경우
@@ -193,7 +254,7 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
             style.padding = '2px 4px';
             style.borderRadius = '2px';
             return (
-              <span key={index} style={style}>
+              <span key={index} style={style} className={classNames.join(' ')}>
                 {segment.text}
               </span>
             );
@@ -208,7 +269,7 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
                 onClick={toggleSpoiler}
                 className={`relative cursor-pointer select-none ${
                   isRevealed || isScattering ? '' : 'text-transparent'
-                }`}
+                } ${classNames.join(' ')}`}
                 style={{
                   ...style,
                   ...(segment.highlight && (isRevealed || isScattering) ? { 
@@ -225,21 +286,22 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ node, authorInfo
 
           // 일반 텍스트
           return (
-            <span key={index} style={style}>
+            <span key={index} style={style} className={classNames.join(' ')}>
               {segment.text}
             </span>
           );
         })}
         </p>
 
-          {/* 제목 옆에 뷰카운트 */}
-          {node.isTitle && viewCount !== undefined && (
-            <div className="flex items-center justify-center w-8 h-8 lg:w-14 lg:h-14 rounded-full bg-white/10 backdrop-blur-sm flex-shrink-0">
-              <span className="text-white font-semibold text-xs lg:text-sm">
-                {formatNumber(viewCount)}
-              </span>
-            </div>
-          )}
+            {/* 제목 옆에 뷰카운트 */}
+            {node.isTitle && viewCount !== undefined && (
+              <div className="flex items-center justify-center w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-white/10 backdrop-blur-sm flex-shrink-0">
+                <span className="text-white font-semibold text-xs lg:text-sm">
+                  {formatNumber(viewCount)}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 스포일러 파티클 오버레이 */}

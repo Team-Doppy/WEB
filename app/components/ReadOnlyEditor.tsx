@@ -127,26 +127,57 @@ export const ReadOnlyEditor: React.FC<ReadOnlyEditorProps> = ({ post }) => {
 
       {/* 콘텐츠 */}
       <div ref={contentRef} className="relative animate-fade-in">
-        {post.content.nodes.map((node, index) => (
-          <LazyBlock
-            key={node.id}
-            node={node}
-            index={index}
-            initialRenderCount={INITIAL_RENDER_COUNT}
-            onRendered={handleBlockRendered}
-            canRender={canRenderBlock(index)}
-          >
-            <div
-              ref={(el) => registerNodeRef(node.id, el)}
-              data-node-id={node.id}
+        {post.content.nodes.map((node, index) => {
+          const prevNode = index > 0 ? post.content.nodes[index - 1] : null;
+          const nextNode = index < post.content.nodes.length - 1 ? post.content.nodes[index + 1] : null;
+          
+          // 특수 노드 타입 체크
+          const isSpecialNode = node.type === 'image' || node.type === 'video' || node.type === 'link' || node.type === 'imageRow';
+          const isParagraphNode = node.type === 'paragraph';
+          const prevIsSpecial = prevNode && (prevNode.type === 'image' || prevNode.type === 'video' || prevNode.type === 'link');
+          const prevIsParagraph = prevNode && prevNode.type === 'paragraph';
+          const nextIsSpecial = nextNode && (nextNode.type === 'image' || nextNode.type === 'video' || nextNode.type === 'link');
+          const nextIsParagraph = nextNode && nextNode.type === 'paragraph';
+          
+          // 특수 노드와 텍스트 노드가 이웃할 때 추가 간격 필요
+          const needsExtraSpacingTop = 
+            (isSpecialNode && prevIsParagraph) || 
+            (isParagraphNode && prevIsSpecial);
+          const needsExtraSpacingBottom = 
+            (isSpecialNode && nextIsParagraph) || 
+            (isParagraphNode && nextIsSpecial);
+          
+          let spacingClass = '';
+          if (needsExtraSpacingTop && needsExtraSpacingBottom) {
+            spacingClass = 'my-10';
+          } else if (needsExtraSpacingTop) {
+            spacingClass = 'mt-10';
+          } else if (needsExtraSpacingBottom) {
+            spacingClass = 'mb-10';
+          }
+          
+          return (
+            <LazyBlock
+              key={node.id}
+              node={node}
+              index={index}
+              initialRenderCount={INITIAL_RENDER_COUNT}
+              onRendered={handleBlockRendered}
+              canRender={canRenderBlock(index)}
             >
-              <BlockRenderer 
-                node={node} 
-                viewCount={index === 0 ? post.viewCount : undefined}
-              />
-            </div>
-          </LazyBlock>
-        ))}
+              <div
+                ref={(el) => registerNodeRef(node.id, el)}
+                data-node-id={node.id}
+                className={spacingClass}
+              >
+                <BlockRenderer 
+                  node={node} 
+                  viewCount={index === 0 ? post.viewCount : undefined}
+                />
+              </div>
+            </LazyBlock>
+          );
+        })}
 
         {/* 드로잉 오버레이 */}
         {post.content.stickers && post.content.stickers.length > 0 && (
