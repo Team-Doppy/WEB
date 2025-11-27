@@ -1,10 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Post } from '@/app/types/post.types';
 import { createPostSlug } from '@/app/lib/slug';
-import { useImageError } from '@/app/hooks/useImageError';
 
 interface PostGridProps {
   post: Post;
@@ -13,11 +12,24 @@ interface PostGridProps {
 }
 
 export const PostGrid: React.FC<PostGridProps> = ({ post, username, aspectRatio = '1:1' }) => {
-  const { hasError, handleError } = useImageError();
+  const [hasError, setHasError] = useState(false);
+  const [isVideo, setIsVideo] = useState(false);
+
+  // URL 확장자로 비디오 파일인지 확인
+  React.useEffect(() => {
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi'];
+    const lowerSrc = post.thumbnailImageUrl.toLowerCase();
+    setIsVideo(videoExtensions.some(ext => lowerSrc.includes(ext)));
+  }, [post.thumbnailImageUrl]);
+
   const postSlug = createPostSlug(post.title, post.id);
   const postUrl = `/${post.id}/${postSlug}`;
 
   const aspectClass = aspectRatio === '4:5' ? 'aspect-[4/5]' : 'aspect-square';
+
+  const handleError = () => {
+    setHasError(true);
+  };
 
   return (
     <Link
@@ -37,12 +49,27 @@ export const PostGrid: React.FC<PostGridProps> = ({ post, username, aspectRatio 
         </div>
       ) : (
         <>
-          <img
-            src={post.thumbnailImageUrl}
-            alt={post.title}
-            className="w-full h-full object-cover group-hover:opacity-50 transition-opacity"
-            onError={handleError}
-          />
+          {isVideo ? (
+            <video
+              src={post.thumbnailImageUrl}
+              className="w-full h-full object-cover group-hover:opacity-50 transition-opacity"
+              autoPlay
+              muted
+              loop
+              playsInline
+              onError={handleError}
+            >
+              <source src={post.thumbnailImageUrl} />
+              영상을 재생할 수 없습니다.
+            </video>
+          ) : (
+            <img
+              src={post.thumbnailImageUrl}
+              alt={post.title}
+              className="w-full h-full object-cover group-hover:opacity-50 transition-opacity"
+              onError={handleError}
+            />
+          )}
           {/* 호버 시 오버레이 */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
             <div className="flex items-center gap-6 text-white">

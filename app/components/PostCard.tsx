@@ -20,6 +20,14 @@ interface ThumbnailImageWithErrorProps {
 
 const ThumbnailImageWithError: React.FC<ThumbnailImageWithErrorProps> = ({ src, alt }) => {
   const [hasError, setHasError] = useState(false);
+  const [isVideo, setIsVideo] = useState(false);
+
+  // URL 확장자로 비디오 파일인지 확인
+  React.useEffect(() => {
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi'];
+    const lowerSrc = src.toLowerCase();
+    setIsVideo(videoExtensions.some(ext => lowerSrc.includes(ext)));
+  }, [src]);
 
   if (hasError) {
     return (
@@ -27,11 +35,30 @@ const ThumbnailImageWithError: React.FC<ThumbnailImageWithErrorProps> = ({ src, 
         <svg className="w-12 h-12 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
-        <p className="text-gray-500 text-sm">이미지를 불러올 수 없습니다</p>
+        <p className="text-gray-500 text-sm">{isVideo ? '영상을 불러올 수 없습니다' : '이미지를 불러올 수 없습니다'}</p>
       </div>
     );
   }
 
+  // 비디오 파일인 경우 비디오 플레이어로 표시
+  if (isVideo) {
+    return (
+      <video
+        src={src}
+        className="w-full h-full object-cover"
+        autoPlay
+        muted
+        loop
+        playsInline
+        onError={() => setHasError(true)}
+      >
+        <source src={src} />
+        영상을 재생할 수 없습니다.
+      </video>
+    );
+  }
+
+  // 이미지 파일인 경우
   return (
     <img
       src={src}
