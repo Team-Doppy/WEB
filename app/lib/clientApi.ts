@@ -7,6 +7,7 @@ import { getAccessToken, refreshToken, getRefreshToken } from './authApi';
 import { clearAuthCookies } from '@/app/utils/cookies';
 import { isTokenExpired, decodeJWT } from '@/app/utils/jwt';
 import { Post } from '@/app/types/post.types';
+import { Comment, CommentResponse } from '@/app/types/comment.types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -1020,5 +1021,111 @@ export async function deleteProfileImage(): Promise<{ success: boolean; message?
     },
     true
   );
+}
+
+/**
+ * 댓글 작성
+ * @param postId 게시글 ID
+ * @param content 댓글 내용
+ * @returns 작성된 댓글 정보
+ */
+export async function createComment(
+  postId: number,
+  content: string
+): Promise<{ success: boolean; data?: Comment; message?: string } | null> {
+  try {
+    const response = await clientApiRequest<{ success: boolean; data?: Comment; message?: string }>(
+      `/web/api/comments`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Client-Type': 'server',
+        },
+        body: JSON.stringify({
+          postId,
+          content,
+          parentId: null,
+          visibility: 'PUBLIC',
+          mentionedUsernames: []
+        }),
+      },
+      true // 인증 필수
+    );
+    
+    return response;
+  } catch (error) {
+    console.error('댓글 작성 오류:', error);
+    return null;
+  }
+}
+
+/**
+ * 댓글 조회
+ * @param postId 게시글 ID
+ * @param page 페이지 번호 (기본값: 0)
+ * @param size 페이지 크기 (기본값: 20)
+ * @returns 댓글 목록 및 페이지네이션 정보
+ */
+export async function getCommentsByPostId(
+  postId: number,
+  page: number = 0,
+  size: number = 20
+): Promise<CommentResponse | null> {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+    });
+    
+    const response = await clientApiRequest<CommentResponse | {
+      content: Comment[];
+      totalElements: number;
+      totalPages: number;
+      size: number;
+      number: number;
+      first: boolean;
+      last: boolean;
+    }>(
+      `/web/api/comments/post/${postId}?${params.toString()}`,
+      {
+        headers: {
+          'X-Client-Type': 'server',
+        },
+      },
+      false // requireAuth를 false로 설정하여 인증 없이도 호출 가능하게 함
+    );
+    
+    if (!response) {
+      console.warn('댓글 API 응답이 null입니다.');
+      return null;
+    }
+    
+    // ApiResponse 형식인 경우 ({ success: true, data: {...} })
+    if (response && typeof response === 'object' && 'success' in response && 'data' in response) {
+      return response as CommentResponse;
+    }
+    
+    // 직접 PaginatedResponse 형식인 경우 ({ content: [], totalElements: ... })
+    if (response && typeof response === 'object' && 'content' in response) {
+      return {
+        success: true,
+        data: response as {
+          content: Comment[];
+          totalElements: number;
+          totalPages: number;
+          size: number;
+          number: number;
+          first: boolean;
+          last: boolean;
+        }
+      };
+    }
+    
+    console.warn('예상하지 못한 댓글 API 응답 형식:', response);
+    return null;
+  } catch (error) {
+    console.error('댓글 조회 오류:', error);
+    return null;
+  }
 }
 

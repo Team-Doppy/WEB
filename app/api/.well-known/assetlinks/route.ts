@@ -15,7 +15,7 @@ export async function GET() {
         namespace: 'android_app',
         package_name: 'com.doppy.app',
         sha256_cert_fingerprints: [
-          'YOUR_SHA256_CERT_FINGERPRINT_HERE', // TODO: 실제 SHA-256 지문으로 교체 필요
+          '1F:2E:C9:26:AA:75:99:BD:D9:81:AF:8D:6E:2A:35:71:45:E5:CF:86', // SHA-256 지문 업데이트 완료
         ],
       },
     },

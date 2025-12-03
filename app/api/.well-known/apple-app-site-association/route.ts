@@ -14,7 +14,7 @@ export async function GET() {
       apps: [],
       details: [
         {
-          appID: 'TEAM_ID.com.doppy.app', // TODO: 실제 Team ID로 교체 필요
+          appID: '33G7A7TQ44.com.doppy.app', // Team ID 업데이트 완료
           paths: ['*'], // 모든 경로에서 앱 열기
         },
       ],

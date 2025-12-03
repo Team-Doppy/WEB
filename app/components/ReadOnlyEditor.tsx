@@ -11,6 +11,7 @@ import { toggleLike as toggleLikeApi } from '@/app/lib/clientApi';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useLikeState } from '@/app/contexts/LikeStateContext';
 import { LoginForm } from './LoginForm';
+import { CommentPreview } from './CommentPreview';
 
 interface ReadOnlyEditorProps {
   post: Post;
@@ -185,6 +186,8 @@ export const ReadOnlyEditor: React.FC<ReadOnlyEditorProps> = ({ post }) => {
         )}
       </div>
 
+      {/* 댓글 프리뷰 */}
+      <CommentPreview postId={post.id} />
 
       {/* 로그인 오버레이 */}
       {isLoginOpen && (
