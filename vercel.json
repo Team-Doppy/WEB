@@ -2,6 +2,17 @@
   "buildCommand": "npm run build",
   "redirects": [
     {
+      "source": "/.well-known/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "doppy.app"
+        }
+      ],
+      "destination": "/.well-known/:path*",
+      "permanent": false
+    },
+    {
       "source": "/:path*",
       "has": [
         {
@@ -13,10 +24,23 @@
       "permanent": true
     }
   ],
-  "rewrites": [
+  "headers": [
     {
       "source": "/.well-known/:path*",
-      "destination": "/.well-known/:path*"
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
     }
   ]
 }
