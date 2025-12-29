@@ -69,7 +69,13 @@ export default async function PostPage({ params }: PageProps) {
       </main>
       
       {/* 앱에서 열기 버튼 (모바일 전용) */}
-      <OpenInAppButton type="post" postId={post.id} />
+      <OpenInAppButton 
+        type="post" 
+        postId={post.id}
+        username={post.author}
+        profileImageUrl={post.authorProfileImageUrl}
+        displayName={post.author}
+      />
     </div>
   );
 }

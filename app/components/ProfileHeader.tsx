@@ -338,7 +338,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       />
       
       {/* 앱에서 열기 버튼 (모바일 전용) */}
-      <OpenInAppButton type="profile" username={username} />
+      <OpenInAppButton 
+        type="profile" 
+        username={username}
+        profileImageUrl={profileImageUrl}
+        displayName={alias || username}
+      />
     </div>
   );
 };
