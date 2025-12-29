@@ -42,23 +42,11 @@ const nextConfig: NextConfig = {
   },
   
   // 프로덕션에서 www가 없는 도메인을 www로 리다이렉트
-  // 주의: .well-known/* 경로는 vercel.json의 rewrites로 처리되어 리디렉션되지 않음
+  // 주의: .well-known/* 경로는 vercel.json에서 처리되어 리디렉션되지 않음
+  // Next.js의 redirects는 vercel.json의 redirects보다 나중에 적용되므로,
+  // vercel.json에서 .well-known 경로를 제외하는 것이 더 확실함
   async redirects() {
-    if (process.env.NODE_ENV === 'production') {
-      return [
-        {
-          source: '/:path*',
-          has: [
-            {
-              type: 'host',
-              value: 'doppy.app', // www 없는 도메인
-            },
-          ],
-          destination: 'https://www.doppy.app/:path*',
-          permanent: true,
-        },
-      ];
-    }
+    // vercel.json에서 redirects를 처리하므로 여기서는 비활성화
     return [];
   },
 };
