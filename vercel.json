@@ -2,17 +2,6 @@
   "buildCommand": "npm run build",
   "redirects": [
     {
-      "source": "/.well-known/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "doppy.app"
-        }
-      ],
-      "destination": "/.well-known/:path*",
-      "permanent": false
-    },
-    {
       "source": "/:path*",
       "has": [
         {
@@ -22,6 +11,12 @@
       ],
       "destination": "https://www.doppy.app/:path*",
       "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/.well-known/:path*",
+      "destination": "/.well-known/:path*"
     }
   ],
   "headers": [
