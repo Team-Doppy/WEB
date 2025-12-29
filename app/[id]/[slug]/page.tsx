@@ -7,6 +7,7 @@ import { formatDate } from '@/app/utils/date';
 import { ReadOnlyEditor } from '@/app/components/ReadOnlyEditor';
 import { ProfileImage } from '@/app/components/ProfileImage';
 import { PrivatePostView } from '@/app/components/PrivatePostView';
+import { OpenInAppButton } from '@/app/components/OpenInAppButton';
 import { ApiError } from '@/app/lib/api';
 
 interface PageProps {
@@ -66,6 +67,9 @@ export default async function PostPage({ params }: PageProps) {
           <ReadOnlyEditor post={post} />
         </div>
       </main>
+      
+      {/* 앱에서 열기 버튼 (모바일 전용) */}
+      <OpenInAppButton type="post" postId={post.id} />
     </div>
   );
 }

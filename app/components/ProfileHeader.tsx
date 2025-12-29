@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { ProfileImage } from './ProfileImage';
 import { LoginForm } from './LoginForm';
 import { ProfileEditModal } from './ProfileEditModal';
+import { OpenInAppButton } from './OpenInAppButton';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { formatDate } from '@/app/utils/date';
 import { toggleFollow, getFriendStatus } from '@/app/lib/clientApi';
@@ -335,6 +336,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           linkTitles,
         }}
       />
+      
+      {/* 앱에서 열기 버튼 (모바일 전용) */}
+      <OpenInAppButton type="profile" username={username} />
     </div>
   );
 };
