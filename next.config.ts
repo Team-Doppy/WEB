@@ -42,6 +42,7 @@ const nextConfig: NextConfig = {
   },
   
   // 프로덕션에서 www가 없는 도메인을 www로 리다이렉트
+  // 주의: .well-known/* 경로는 vercel.json의 rewrites로 처리되어 리디렉션되지 않음
   async redirects() {
     if (process.env.NODE_ENV === 'production') {
       return [
